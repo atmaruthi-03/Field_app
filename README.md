@@ -1,50 +1,37 @@
-# Welcome to your Expo app 👋
+# Alfred Field App 🛡️
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+**"Cover your ass better than WhatsApp - with proof you can actually find later."**
 
-## Get started
+Alfred is a specialized update tool designed for construction site teams. It bridges the gap between the informal, quick nature of WhatsApp and the structured, accountable data needs of Project Managers (PMs).
 
-1. Install dependencies
+## Core Philosophy: Shield, not Shackles
+Field teams adoption is the priority. Alfred succeeds only if it protects the field team from blame rather than exposing them to it. The record is their shield.
 
-   ```bash
-   npm install
-   ```
+## Key Features (The "CYA" Pillars)
+1. **Automatic Issue Flagging**: AI detects problems (like material delays) automatically, removing the need for teams to "rat" on suppliers.
+2. **Historical Proof ("Show Timeline")**: One-tap defense with receipts for PM inquiries.
+3. **Proactive Escalation**: Teams control the message before it reaches the PM.
+4. **"I Told You" Search**: Instant proof in disputes with dated, searchable context.
 
-2. Start the app
+## How it Works
+1. **Input**: WhatsApp-like chat interface (Photos, Text).
+2. **Magic Middle**: AI drafts structured updates from chat inputs.
+3. **Review Window**: Field teams have a 2-hour window to review and approve drafts before they go to the PM.
+4. **Output**: Structured, WBS-mapped data for PM dashboards.
 
-   ```bash
-   npx expo start
-   ```
+## MVP Build Sequence
+- **Phase 1**: Core Input/Output (WhatsApp UI, Photo Auto-tags, Review Screen).
+- **Phase 2**: AI Structuring + CYA Features (Historical Proof, Auto-logging).
+- **Phase 3**: Protection Features (Auto-flagging, Proactive Escalation).
+- **Phase 4**: WBS Integration.
 
-In the output, you'll find options to open the app in a
+---
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Technical Setup
+1. **Frontend**: Expo (React Native) with File-based Routing.
+2. **Styling**: React Native StyleSheet (Flexbox).
+3. **Navigation**: Expo Router (with `(auth)` and `(main)` groups).
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Getting Started
+1. Install dependencies: `npm install`
+2. Run on Android: `npm run android`

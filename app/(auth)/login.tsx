@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
     Image,
@@ -13,6 +14,7 @@ import {
 } from 'react-native';
 
 export default function LoginScreen() {
+    const router = useRouter();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [rememberMe, setRememberMe] = useState(false);
@@ -83,7 +85,11 @@ export default function LoginScreen() {
                         <Text style={styles.rememberMeText}>Remember me</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.loginButton} activeOpacity={0.8}>
+                    <TouchableOpacity
+                        style={styles.loginButton}
+                        activeOpacity={0.8}
+                        onPress={() => router.replace('/(main)')}
+                    >
                         <Text style={styles.loginButtonText}>Login</Text>
                     </TouchableOpacity>
                 </View>
