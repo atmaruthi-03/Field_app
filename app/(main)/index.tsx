@@ -1,12 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { useRouter } from 'expo-router';
 import React from 'react';
 import {
     Alert,
+    KeyboardAvoidingView,
     Platform,
-    SafeAreaView,
     ScrollView,
-    StatusBar,
     StyleSheet,
     Text,
     TextInput,
@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 
 export default function HomeDashboard() {
+    const router = useRouter();
     const [image, setImage] = React.useState<string | null>(null);
 
     const currentDate = new Date().toLocaleDateString('en-GB', {
@@ -44,316 +45,271 @@ export default function HomeDashboard() {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="light-content" />
-            <ScrollView stickyHeaderIndices={[0]} showsVerticalScrollIndicator={false}>
-                {/* Section A: The Identity Header */}
-                <View style={styles.headerBackground}>
-                    <View style={styles.headerContent}>
-                        <View>
-                            <Text style={styles.greetingText}>Hello, <Text style={styles.userName}>Maruthi</Text></Text>
-                            <View style={styles.dateContainer}>
-                                <Text style={styles.dateText}>{currentDate}</Text>
-                                <Ionicons name="chevron-down" size={14} color="rgba(255,255,255,0.8)" style={styles.chevron} />
+        <View style={styles.container}>
+
+            <KeyboardAvoidingView
+                behavior="padding"
+                style={{ flex: 1 }}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 80}
+            >
+                <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    style={styles.chatContainer}
+                    contentContainerStyle={styles.chatContent}
+                >
+                    <Text style={styles.dateLabel}>TODAY</Text>
+
+                    {/* AI Proactive Introduction */}
+                    <View style={styles.aiMessageWrapper}>
+                        <View style={styles.aiRoleContainer}>
+                            <View style={styles.aiDot} />
+                            <Text style={styles.aiRoleLabel}>ALFRED</Text>
+                        </View>
+
+                        <View style={styles.aiResponseCard}>
+                            <Text style={styles.aiGreeting}>Good Morning, Maruthi! 👋</Text>
+                            <Text style={styles.aiIntroText}>
+                                Here are your top priorities for today at the North Block site. Which one would you like to start with?
+                            </Text>
+
+                            {/* Section: Daily Commitments (Embedded in Chat) */}
+                            <View style={styles.iosSectionHeader}>
+                                <Text style={styles.iosSectionTitle}>Daily Commitments</Text>
+                            </View>
+
+                            <View style={styles.iosInsetGrouped}>
+                                <TouchableOpacity style={styles.iosListItem}>
+                                    <Ionicons name="ellipse-outline" size={20} color="#34A853" style={styles.iosStatusIcon} />
+                                    <View style={styles.iosListContent}>
+                                        <Text style={styles.iosListTitle}>Zone 3: North Block Rebar</Text>
+                                        <Text style={styles.iosListSubtitle}>Reinforcement work (Floor 2)</Text>
+                                    </View>
+                                    <View style={styles.iosStartBadge}>
+                                        <Text style={styles.iosStartBadgeText}>Start</Text>
+                                    </View>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity style={styles.iosListItem}>
+                                    <Ionicons name="play-circle" size={20} color="#1890FF" style={styles.iosStatusIcon} />
+                                    <View style={styles.iosListContent}>
+                                        <Text style={styles.iosListTitle}>Zone 5: Plumbing Prep</Text>
+                                        <Text style={styles.iosListSubtitle}>Wait for RFI reply (Drainage)</Text>
+                                    </View>
+                                    <Text style={styles.iosActiveText}>Active</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity style={[styles.iosListItem, { borderBottomWidth: 0 }]}>
+                                    <Ionicons name="checkmark-circle" size={20} color="#52C41A" style={styles.iosStatusIcon} />
+                                    <View style={styles.iosListContent}>
+                                        <Text style={[styles.iosListTitle, { color: '#8E8E93', textDecorationLine: 'line-through' }]}>Daily Safety Briefing</Text>
+                                        <Text style={styles.iosListSubtitle}>Completed at 08:15 AM</Text>
+                                    </View>
+                                </TouchableOpacity>
                             </View>
                         </View>
-                        <TouchableOpacity style={styles.notificationButton} activeOpacity={0.7}>
-                            <Ionicons name="notifications-outline" size={24} color="#fff" />
-                            <View style={styles.notificationBadge} />
+                    </View>
+                </ScrollView>
+
+                {/* Sticky Chat Input */}
+                <View style={styles.inputSection}>
+                    <View style={styles.inputRow}>
+                        {/* Text Input area with integrated send icon */}
+                        <View style={styles.searchBar}>
+                            <TextInput
+                                style={styles.textInput}
+                                placeholder="Message Alfred..."
+                                placeholderTextColor="#999"
+                                returnKeyType="send"
+                                multiline
+                            />
+                            <TouchableOpacity style={styles.sendIconInside} activeOpacity={0.7}>
+                                <Ionicons name="send" size={22} color="#34A853" />
+                            </TouchableOpacity>
+                        </View>
+
+                        {/* Camera Button (Main Action) */}
+                        <TouchableOpacity style={styles.cameraButtonOutside} onPress={handleCamera} activeOpacity={0.8}>
+                            <Ionicons name="camera" size={22} color="#fff" />
                         </TouchableOpacity>
                     </View>
-
-                    {/* Section B: The "Ask Alfred" Pulse */}
-                    <View style={styles.searchContainer}>
-                        <View style={styles.searchWrapper}>
-                            <Ionicons name="search-outline" size={20} color="#999" style={styles.searchIcon} />
-                            <TextInput
-                                style={styles.searchInput}
-                                placeholder="Ask Alfred about the site..."
-                                placeholderTextColor="#999"
-                            />
-                        </View>
-                    </View>
                 </View>
-
-                {/* Content Placeholder for Phase 2 & 3 */}
-                <View style={styles.content}>
-                    {/* Section E: Current Blockers (The Shield) */}
-                    <View style={[styles.sectionHeader, { marginTop: 20 }]}>
-                        <Text style={styles.sectionTitle}>Current Blockers</Text>
-                        <TouchableOpacity><Text style={styles.seeAllText}>See All</Text></TouchableOpacity>
-                    </View>
-                    <View style={styles.blockerCard}>
-                        <View style={styles.blockerItem}>
-                            <View style={[styles.blockerTag, { backgroundColor: '#FFF2F0' }]}>
-                                <Ionicons name="warning" size={14} color="#FF4D4F" />
-                                <Text style={styles.blockerTagText}>Material Delay</Text>
-                            </View>
-                            <Text style={styles.blockerText}>Missing Zone 3 Rebar delivery</Text>
-                            <Text style={styles.blockerTime}>Flagged 2h ago</Text>
-                        </View>
-                        <View style={styles.blockerItem}>
-                            <View style={[styles.blockerTag, { backgroundColor: '#F6FFED' }]}>
-                                <Ionicons name="checkmark-circle" size={14} color="#52C41A" />
-                                <Text style={[styles.blockerTagText, { color: '#52C41A' }]}>Permit Cleared</Text>
-                            </View>
-                            <Text style={styles.blockerText}>Zone 5 Plumbing Permit approved</Text>
-                            <Text style={styles.blockerTime}>Updated 4h ago</Text>
-                        </View>
-                    </View>
-
-                    {/* Section F: Active Zones (The Feed) */}
-                    <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>Active Zones</Text>
-                        <TouchableOpacity><Text style={styles.seeAllText}>View Map</Text></TouchableOpacity>
-                    </View>
-
-                    <TouchableOpacity style={styles.zoneCard} activeOpacity={0.7}>
-                        <View style={styles.zoneImagePlaceholder}>
-                            <Ionicons name="business" size={24} color="#34A853" />
-                        </View>
-                        <View style={styles.zoneInfo}>
-                            <Text style={styles.zoneName}>Zone 3 - North Block</Text>
-                            <Text style={styles.zoneStatus}>Reinforcement in progress</Text>
-                        </View>
-                        <View style={styles.unreadBadge}>
-                            <Text style={styles.unreadText}>3</Text>
-                        </View>
-                        <Ionicons name="chevron-forward" size={18} color="#CCC" />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity style={styles.zoneCard} activeOpacity={0.7}>
-                        <View style={[styles.zoneImagePlaceholder, { backgroundColor: '#E6F7FF' }]}>
-                            <Ionicons name="construct" size={24} color="#1890FF" />
-                        </View>
-                        <View style={styles.zoneInfo}>
-                            <Text style={styles.zoneName}>Zone 5 - Plumbing</Text>
-                            <Text style={styles.zoneStatus}>Waiting for RFI response</Text>
-                        </View>
-                        <Ionicons name="chevron-forward" size={18} color="#CCC" />
-                    </TouchableOpacity>
-
-                    <View style={{ height: 100 }} />
-                </View>
-            </ScrollView>
-
-            {/* Floating Camera Button (Primary CTA) */}
-            <TouchableOpacity
-                style={styles.fabButton}
-                activeOpacity={0.8}
-                onPress={handleCamera}
-            >
-                <Ionicons name="camera" size={28} color="#fff" />
-            </TouchableOpacity>
-        </SafeAreaView>
+            </KeyboardAvoidingView>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F8F8F8',
+        backgroundColor: '#fff',
     },
-    headerBackground: {
-        backgroundColor: '#34A853',
-        paddingBottom: 30,
-        borderBottomLeftRadius: 32,
-        borderBottomRightRadius: 32,
-        paddingHorizontal: 24,
-        paddingTop: Platform.OS === 'android' ? 40 : 20, // Increased for safe area
+    chatContainer: {
+        flex: 1,
     },
-    headerContent: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+    chatContent: {
+        padding: 16,
+        paddingBottom: 32,
+    },
+    dateLabel: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: '#BBB',
+        textAlign: 'center',
+        marginVertical: 20,
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+    },
+    aiMessageWrapper: {
         marginBottom: 24,
     },
-    greetingText: {
-        fontSize: 22,
-        color: '#fff',
-        opacity: 0.9,
-    },
-    userName: {
-        fontWeight: '700',
-        opacity: 1,
-    },
-    dateContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginTop: 4,
-    },
-    dateText: {
-        fontSize: 14,
-        color: 'rgba(255,255,255,0.8)',
-    },
-    chevron: {
-        marginLeft: 4,
-    },
-    notificationButton: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        backgroundColor: 'rgba(255,255,255,0.2)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        position: 'relative',
-    },
-    notificationBadge: {
-        position: 'absolute',
-        top: 12,
-        right: 14,
+    aiDot: {
         width: 10,
         height: 10,
         borderRadius: 5,
-        backgroundColor: '#FF4D4F',
-        borderWidth: 2,
-        borderColor: '#34A853',
+        backgroundColor: '#34A853',
+        marginRight: 7,
     },
-    searchContainer: {
-        width: '100%',
-    },
-    searchWrapper: {
+    aiRoleContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fff',
-        borderRadius: 30,
-        paddingHorizontal: 16,
-        height: 56,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 10,
-        elevation: 8,
-    },
-    searchIcon: {
-        marginRight: 12,
-    },
-    searchInput: {
-        flex: 1,
-        fontSize: 16,
-        color: '#333',
-        height: '100%',
-    },
-    micButton: {
-        padding: 8,
-    },
-    content: {
-        paddingHorizontal: 24,
-        paddingTop: 10,
-    },
-    sectionHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 16,
-    },
-    sectionTitle: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: '#1A1A1A',
-    },
-    seeAllText: {
-        fontSize: 14,
-        color: '#34A853',
-        fontWeight: '600',
-    },
-    blockerCard: {
-        backgroundColor: '#fff',
-        borderRadius: 20,
-        padding: 16,
-        marginBottom: 24,
-        borderWidth: 1,
-        borderColor: '#F0F0F0',
-    },
-    blockerItem: {
-        marginBottom: 16,
-        paddingBottom: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#F0F0F0',
-    },
-    blockerTag: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 6,
-        alignSelf: 'flex-start',
         marginBottom: 8,
     },
-    blockerTagText: {
-        fontSize: 10,
+    aiAvatarSmall: {
+        width: 24,
+        height: 24,
+        marginRight: 8,
+    },
+    aiRoleLabel: {
+        fontSize: 11,
         fontWeight: '700',
-        color: '#FF4D4F',
-        marginLeft: 4,
+        color: '#8E8E93',
+        letterSpacing: 0.5,
     },
-    blockerText: {
-        fontSize: 15,
-        fontWeight: '600',
-        color: '#333',
-        marginBottom: 4,
-    },
-    blockerTime: {
-        fontSize: 12,
-        color: '#999',
-    },
-    zoneCard: {
-        flexDirection: 'row',
-        alignItems: 'center',
+    aiResponseCard: {
         backgroundColor: '#fff',
-        padding: 16,
-        borderRadius: 20,
-        marginBottom: 12,
+        borderRadius: 24,
+        padding: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+        elevation: 2,
         borderWidth: 1,
         borderColor: '#F0F0F0',
     },
-    zoneImagePlaceholder: {
-        width: 50,
-        height: 50,
-        borderRadius: 12,
-        backgroundColor: '#F6FFED',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 16,
+    aiGreeting: {
+        fontSize: 20,
+        fontWeight: '700',
+        color: '#000',
+        marginBottom: 8,
     },
-    zoneInfo: {
+    aiIntroText: {
+        fontSize: 16,
+        color: '#333',
+        lineHeight: 22,
+        marginBottom: 20,
+    },
+    iosSectionHeader: {
+        marginBottom: 12,
+        paddingTop: 8,
+        borderTopWidth: 1,
+        borderTopColor: '#F0F0F0',
+    },
+    iosSectionTitle: {
+        fontSize: 15,
+        fontWeight: '700',
+        color: '#8E8E93',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    iosInsetGrouped: {
+        backgroundColor: '#F8F9FA',
+        borderRadius: 16,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: '#EEE',
+    },
+    iosListItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 14,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: '#EEE',
+    },
+    iosStatusIcon: {
+        marginRight: 10,
+    },
+    iosListContent: {
         flex: 1,
     },
-    zoneName: {
-        fontSize: 16,
-        fontWeight: '700',
-        color: '#1A1A1A',
-        marginBottom: 4,
+    iosListTitle: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: '#000',
     },
-    zoneStatus: {
+    iosListSubtitle: {
         fontSize: 13,
-        color: '#666',
+        color: '#8E8E93',
+        marginTop: 1,
     },
-    unreadBadge: {
+    iosStartBadge: {
         backgroundColor: '#34A853',
-        paddingHorizontal: 8,
-        paddingVertical: 2,
-        borderRadius: 10,
-        marginRight: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+        borderRadius: 12,
     },
-    unreadText: {
+    iosStartBadgeText: {
         color: '#fff',
-        fontSize: 10,
+        fontSize: 11,
         fontWeight: '700',
     },
-    fabButton: {
-        position: 'absolute',
-        bottom: 30,
-        alignSelf: 'center',
+    iosActiveText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: '#007AFF',
+    },
+    inputSection: {
+        backgroundColor: '#fff',
+        paddingTop: 10,
+        paddingBottom: Platform.OS === 'android' ? 20 : 24,
+        paddingHorizontal: 16,
+        borderTopWidth: 1,
+        borderTopColor: '#F0F0F0',
+    },
+    inputRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+    },
+    sendIconInside: {
+        padding: 4,
+        marginLeft: 8,
+    },
+    searchBar: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F3F4F6',
+        borderRadius: 25,
+        paddingHorizontal: 16,
+        height: 48,
+    },
+    textInput: {
+        flex: 1,
+        fontSize: 16,
+        color: '#1A1A1A',
+    },
+    cameraButtonOutside: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
         backgroundColor: '#34A853',
-        width: 64,
-        height: 64,
-        borderRadius: 32,
         justifyContent: 'center',
         alignItems: 'center',
         shadowColor: '#34A853',
-        shadowOffset: { width: 0, height: 8 },
+        shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
-        shadowRadius: 12,
-        elevation: 10,
+        shadowRadius: 6,
+        elevation: 3,
     },
 });

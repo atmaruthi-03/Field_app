@@ -1,59 +1,36 @@
-import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
+import AppShell from '../../components/AppShell';
 
 export default function MainLayout() {
     return (
-        <Tabs
-            screenOptions={{
-                headerShown: false,
-                tabBarActiveTintColor: '#34A853',
-                tabBarInactiveTintColor: '#999',
-                tabBarStyle: {
-                    borderTopWidth: 1,
-                    borderTopColor: '#E0E0E0',
-                    height: 60,
-                    paddingBottom: 8,
-                    paddingTop: 8,
-                },
-            }}
-        >
-            <Tabs.Screen
-                name="index"
-                options={{
-                    title: 'Home',
-                    tabBarIcon: ({ color, size }) => (
-                        <Ionicons name="shield-outline" size={size} color={color} />
-                    ),
+        <AppShell>
+            <Tabs
+                screenOptions={{
+                    headerShown: false,
+                    tabBarStyle: { display: 'none' }, // Hidden — nav is via AppShell drawer
                 }}
-            />
-            <Tabs.Screen
-                name="chat_list"
-                options={{
-                    title: 'Chat',
-                    tabBarIcon: ({ color, size }) => (
-                        <Ionicons name="chatbubbles-outline" size={size} color={color} />
-                    ),
-                }}
-            />
-            <Tabs.Screen
-                name="search"
-                options={{
-                    title: 'Search',
-                    tabBarIcon: ({ color, size }) => (
-                        <Ionicons name="search-outline" size={size} color={color} />
-                    ),
-                }}
-            />
-            <Tabs.Screen
-                name="profile"
-                options={{
-                    title: 'Profile',
-                    tabBarIcon: ({ color, size }) => (
-                        <Ionicons name="person-outline" size={size} color={color} />
-                    ),
-                }}
-            />
-        </Tabs>
+            >
+                <Tabs.Screen
+                    name="index"
+                    options={{ title: 'Alfred' }}
+                />
+                <Tabs.Screen
+                    name="history"
+                    options={{ title: 'History' }}
+                />
+                <Tabs.Screen
+                    name="dashboard"
+                    options={{ title: 'Dashboard' }}
+                />
+                <Tabs.Screen
+                    name="profile"
+                    options={{ title: 'Profile' }}
+                />
+                {/* Hidden/unused routes */}
+                <Tabs.Screen name="chat_list" options={{ href: null }} />
+                <Tabs.Screen name="search" options={{ href: null }} />
+            </Tabs>
+        </AppShell>
     );
 }
