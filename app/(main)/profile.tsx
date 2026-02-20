@@ -5,93 +5,83 @@ import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } fr
 export default function ProfileScreen() {
     const router = useRouter();
 
+    const stats = [
+        { label: 'Weekly Hours', value: '42.5' },
+        { label: 'Sites Managed', value: '03' },
+        { label: 'Reliability', value: '98%' },
+    ];
+
     return (
         <SafeAreaView style={styles.container}>
-            <ScrollView showsVerticalScrollIndicator={false}>
-                {/* Profile Header */}
-                <View style={styles.header}>
-                    <View style={styles.profileInfo}>
-                        <View style={styles.avatarPlaceholder}>
-                            <Ionicons name="person" size={40} color="#34A853" />
-                        </View>
-                        <View>
-                            <Text style={styles.userName}>Maruthi T</Text>
-                            <Text style={styles.userRole}>Site Supervisor</Text>
-                        </View>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+
+                {/* Header: User Info */}
+                <View style={styles.profileHeader}>
+                    <View style={styles.avatarContainer}>
+                        <Text style={styles.avatarText}>MT</Text>
+                    </View>
+                    <View style={styles.userInfo}>
+                        <Text style={styles.userName}>Maruthi T</Text>
+                        <Text style={styles.userRole}>Site Supervisor · North Block</Text>
                     </View>
                 </View>
 
-                <View style={styles.content}>
-                    {/* Section D: Site KPI Card (Execution & Context) */}
-                    <View style={styles.kpiCard}>
-                        <View style={styles.kpiHeader}>
-                            <View style={styles.locationContainer}>
-                                <Ionicons name="location-sharp" size={16} color="#34A853" />
-                                <Text style={styles.locationText}>Zone 3 - North Block</Text>
+                {/* Profile Bento Section */}
+                <View style={styles.bentoContainer}>
+                    {/* Hero Stats */}
+                    <View style={styles.statsCard}>
+                        {stats.map((stat, i) => (
+                            <View key={stat.label} style={styles.statItem}>
+                                <Text style={styles.statValue}>{stat.value}</Text>
+                                <Text style={styles.statLabel}>{stat.label}</Text>
                             </View>
-                            <View style={styles.weatherSummary}>
-                                <Ionicons name="cloudy-night" size={20} color="#666" />
-                                <Text style={styles.weatherTemp}>32°C</Text>
-                            </View>
-                        </View>
-
-                        <View style={styles.kpiGrid}>
-                            <View style={styles.kpiItem}>
-                                <View style={[styles.kpiIconBox, { backgroundColor: '#E6F7FF' }]}>
-                                    <Ionicons name="list" size={20} color="#1890FF" />
-                                </View>
-                                <Text style={styles.kpiValue}>12</Text>
-                                <Text style={styles.kpiLabel}>Tasks Pending</Text>
-                            </View>
-                            <View style={styles.kpiItem}>
-                                <View style={[styles.kpiIconBox, { backgroundColor: '#F6FFED' }]}>
-                                    <Ionicons name="checkmark-done" size={20} color="#52C41A" />
-                                </View>
-                                <Text style={styles.kpiValue}>08</Text>
-                                <Text style={styles.kpiLabel}>Completed</Text>
-                            </View>
-                            <View style={styles.kpiItem}>
-                                <View style={[styles.kpiIconBox, { backgroundColor: '#FFF7E6' }]}>
-                                    <Ionicons name="time-outline" size={20} color="#FAAD14" />
-                                </View>
-                                <Text style={styles.kpiValue}>04</Text>
-                                <Text style={styles.kpiLabel}>Delayed</Text>
-                            </View>
-                        </View>
-
-                        <View style={styles.pulseContainer}>
-                            <View style={styles.pulseHeader}>
-                                <Text style={styles.pulseTitle}>Overall Progress</Text>
-                                <Text style={styles.pulseValue}>78% Reliability</Text>
-                            </View>
-                            <View style={styles.progressBar}>
-                                <View style={[styles.progressFill, { width: '78%' }]} />
-                            </View>
-                        </View>
+                        ))}
                     </View>
 
+                    {/* Section: Settings */}
                     <Text style={styles.sectionTitle}>Account Settings</Text>
+                    <View style={styles.settingsGroup}>
+                        <TouchableOpacity style={styles.settingRow}>
+                            <View style={styles.settingLeft}>
+                                <Ionicons name="notifications-outline" size={20} color="#71717A" />
+                                <Text style={styles.settingLabel}>Notifications</Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={16} color="#A1A1AA" />
+                        </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.settingItem}>
-                        <Ionicons name="notifications-outline" size={22} color="#666" />
-                        <Text style={styles.settingText}>Notifications</Text>
-                        <Ionicons name="chevron-forward" size={18} color="#CCC" />
-                    </TouchableOpacity>
+                        <View style={styles.divider} />
 
-                    <TouchableOpacity style={styles.settingItem}>
-                        <Ionicons name="shield-checkmark-outline" size={22} color="#666" />
-                        <Text style={styles.settingText}>Privacy & Security</Text>
-                        <Ionicons name="chevron-forward" size={18} color="#CCC" />
-                    </TouchableOpacity>
+                        <TouchableOpacity style={styles.settingRow}>
+                            <View style={styles.settingLeft}>
+                                <Ionicons name="shield-checkmark-outline" size={20} color="#71717A" />
+                                <Text style={styles.settingLabel}>Security</Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={16} color="#A1A1AA" />
+                        </TouchableOpacity>
 
+                        <View style={styles.divider} />
+
+                        <TouchableOpacity style={styles.settingRow}>
+                            <View style={styles.settingLeft}>
+                                <Ionicons name="color-palette-outline" size={20} color="#71717A" />
+                                <Text style={styles.settingLabel}>Appearance</Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={16} color="#A1A1AA" />
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* Danger Zone */}
                     <TouchableOpacity
                         style={styles.logoutButton}
                         onPress={() => router.replace('/(auth)/login')}
                     >
-                        <Ionicons name="log-out-outline" size={20} color="#F5222D" />
-                        <Text style={styles.logoutText}>Logout</Text>
+                        <Text style={styles.logoutText}>Log Out</Text>
                     </TouchableOpacity>
+
+                    <Text style={styles.versionText}>App Version 0.1.0 · Build 124</Text>
                 </View>
+
+                <View style={{ height: 40 }} />
             </ScrollView>
         </SafeAreaView>
     );
@@ -100,174 +90,128 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F8F8F8',
+        backgroundColor: '#FAFAFA',
     },
-    content: {
-        padding: 24,
+    scroll: {
+        paddingHorizontal: 16,
+        paddingTop: 32,
     },
-    header: {
-        backgroundColor: '#34A853',
-        paddingTop: 40,
-        paddingBottom: 60,
-        paddingHorizontal: 24,
-        borderBottomLeftRadius: 32,
-        borderBottomRightRadius: 32,
-    },
-    profileInfo: {
+    profileHeader: {
         flexDirection: 'row',
         alignItems: 'center',
+        marginBottom: 32,
+        paddingHorizontal: 8,
     },
-    avatarPlaceholder: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        backgroundColor: '#fff',
+    avatarContainer: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        backgroundColor: '#09090B',
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 20,
+        marginRight: 16,
     },
-    userName: {
-        fontSize: 24,
-        fontWeight: '700',
-        color: '#fff',
-    },
-    userRole: {
-        fontSize: 16,
-        color: 'rgba(255,255,255,0.8)',
-    },
-    kpiCard: {
-        backgroundColor: '#fff',
-        borderRadius: 24,
-        padding: 20,
-        marginBottom: 32,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.05,
-        shadowRadius: 20,
-        elevation: 5,
-        marginTop: -40, // Overlap header
-    },
-    kpiHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 20,
-    },
-    locationContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    locationText: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#333',
-        marginLeft: 4,
-    },
-    weatherSummary: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    weatherTemp: {
+    avatarText: {
         fontSize: 20,
         fontWeight: '700',
-        color: '#000',
-        marginLeft: 8,
+        color: '#FFFFFF',
     },
-    kpiGrid: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        marginBottom: 20,
-    },
-    kpiItem: {
-        alignItems: 'center',
+    userInfo: {
         flex: 1,
     },
-    kpiIconBox: {
-        width: 44,
-        height: 44,
-        borderRadius: 12,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 8,
-    },
-    kpiValue: {
-        fontSize: 18,
+    userName: {
+        fontSize: 22,
         fontWeight: '700',
-        color: '#000',
+        color: '#09090B',
+        letterSpacing: -0.5,
     },
-    kpiLabel: {
-        fontSize: 11,
-        color: '#666',
+    userRole: {
+        fontSize: 14,
+        color: '#71717A',
         marginTop: 2,
     },
-    pulseContainer: {
-        borderTopWidth: 1,
-        borderTopColor: '#F0F0F0',
-        paddingTop: 16,
+    bentoContainer: {
+        gap: 24,
     },
-    pulseHeader: {
+    statsCard: {
         flexDirection: 'row',
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        padding: 20,
+        borderWidth: 1,
+        borderColor: '#E4E4E7',
         justifyContent: 'space-between',
-        marginBottom: 8,
     },
-    pulseTitle: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#666',
+    statItem: {
+        alignItems: 'center',
+        flex: 1,
     },
-    pulseValue: {
-        fontSize: 14,
+    statValue: {
+        fontSize: 20,
         fontWeight: '700',
-        color: '#34A853',
+        color: '#09090B',
     },
-    progressBar: {
-        height: 8,
-        backgroundColor: '#F0F0F0',
-        borderRadius: 4,
-        overflow: 'hidden',
-    },
-    progressFill: {
-        height: '100%',
-        backgroundColor: '#34A853',
-        borderRadius: 4,
+    statLabel: {
+        fontSize: 11,
+        color: '#A1A1AA',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+        marginTop: 4,
     },
     sectionTitle: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: '#1A1A1A',
-        marginBottom: 16,
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#A1A1AA',
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+        marginBottom: -12,
+        paddingHorizontal: 8,
     },
-    settingItem: {
+    settingsGroup: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: '#E4E4E7',
+        overflow: 'hidden',
+    },
+    settingRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fff',
+        justifyContent: 'space-between',
         padding: 16,
-        borderRadius: 16,
-        marginBottom: 12,
-        borderWidth: 1,
-        borderColor: '#F0F0F0',
     },
-    settingText: {
-        flex: 1,
-        fontSize: 16,
-        color: '#333',
-        marginLeft: 12,
+    settingLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    settingLabel: {
+        fontSize: 15,
+        fontWeight: '500',
+        color: '#09090B',
+    },
+    divider: {
+        height: 1,
+        backgroundColor: '#F4F4F5',
+        marginLeft: 48,
     },
     logoutButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#FFF1F0',
+        backgroundColor: '#FEF2F2',
+        borderRadius: 12,
         padding: 16,
-        borderRadius: 16,
-        marginTop: 24,
+        alignItems: 'center',
         borderWidth: 1,
-        borderColor: '#FFA39E',
+        borderColor: '#FECACA',
     },
     logoutText: {
-        color: '#F5222D',
-        fontWeight: '700',
-        fontSize: 16,
-        marginLeft: 8,
+        fontSize: 15,
+        fontWeight: '600',
+        color: '#EF4444',
+    },
+    versionText: {
+        fontSize: 12,
+        color: '#A1A1AA',
+        textAlign: 'center',
+        marginTop: 8,
     },
 });

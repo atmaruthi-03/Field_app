@@ -110,26 +110,23 @@ export default function HomeDashboard() {
                     </View>
                 </ScrollView>
 
-                {/* Sticky Chat Input */}
-                <View style={styles.inputSection}>
-                    <View style={styles.inputRow}>
-                        {/* Text Input area with integrated send icon */}
-                        <View style={styles.searchBar}>
-                            <TextInput
-                                style={styles.textInput}
-                                placeholder="Message Alfred..."
-                                placeholderTextColor="#999"
-                                returnKeyType="send"
-                                multiline
-                            />
-                            <TouchableOpacity style={styles.sendIconInside} activeOpacity={0.7}>
-                                <Ionicons name="send" size={22} color="#34A853" />
-                            </TouchableOpacity>
-                        </View>
+                {/* Floating Chat Input — ChatGPT style */}
+                <View style={styles.floatingInputContainer}>
+                    <View style={styles.floatingBar}>
+                        <TouchableOpacity onPress={handleCamera} activeOpacity={0.7} style={styles.floatingIconBtn}>
+                            <Ionicons name="camera-outline" size={20} color="#71717A" />
+                        </TouchableOpacity>
 
-                        {/* Camera Button (Main Action) */}
-                        <TouchableOpacity style={styles.cameraButtonOutside} onPress={handleCamera} activeOpacity={0.8}>
-                            <Ionicons name="camera" size={22} color="#fff" />
+                        <TextInput
+                            style={styles.floatingTextInput}
+                            placeholder="Message Alfred..."
+                            placeholderTextColor="#A1A1AA"
+                            returnKeyType="send"
+                            multiline
+                        />
+
+                        <TouchableOpacity activeOpacity={0.8} style={styles.floatingSendBtn}>
+                            <Ionicons name="arrow-up" size={18} color="#FFFFFF" />
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -141,7 +138,7 @@ export default function HomeDashboard() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#FAFAFA',
     },
     chatContainer: {
         flex: 1,
@@ -186,28 +183,23 @@ const styles = StyleSheet.create({
         letterSpacing: 0.5,
     },
     aiResponseCard: {
-        backgroundColor: '#fff',
-        borderRadius: 24,
-        padding: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 10,
-        elevation: 2,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 12,
+        padding: 14,
         borderWidth: 1,
-        borderColor: '#F0F0F0',
+        borderColor: '#E4E4E7',
     },
     aiGreeting: {
-        fontSize: 20,
-        fontWeight: '700',
-        color: '#000',
-        marginBottom: 8,
+        fontSize: 17,
+        fontWeight: '600',
+        color: '#09090B',
+        marginBottom: 6,
     },
     aiIntroText: {
-        fontSize: 16,
-        color: '#333',
-        lineHeight: 22,
-        marginBottom: 20,
+        fontSize: 14,
+        color: '#3F3F46',
+        lineHeight: 20,
+        marginBottom: 16,
     },
     iosSectionHeader: {
         marginBottom: 12,
@@ -216,11 +208,11 @@ const styles = StyleSheet.create({
         borderTopColor: '#F0F0F0',
     },
     iosSectionTitle: {
-        fontSize: 15,
+        fontSize: 11,
         fontWeight: '700',
-        color: '#8E8E93',
+        color: '#A1A1AA',
         textTransform: 'uppercase',
-        letterSpacing: 0.5,
+        letterSpacing: 0.8,
     },
     iosInsetGrouped: {
         backgroundColor: '#F8F9FA',
@@ -243,73 +235,72 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     iosListTitle: {
-        fontSize: 15,
-        fontWeight: '600',
-        color: '#000',
+        fontSize: 14,
+        fontWeight: '500',
+        color: '#09090B',
     },
     iosListSubtitle: {
-        fontSize: 13,
-        color: '#8E8E93',
+        fontSize: 12,
+        color: '#71717A',
         marginTop: 1,
     },
     iosStartBadge: {
-        backgroundColor: '#34A853',
-        paddingHorizontal: 12,
-        paddingVertical: 4,
-        borderRadius: 12,
+        backgroundColor: '#F0FDF4',
+        paddingHorizontal: 10,
+        paddingVertical: 3,
+        borderRadius: 10,
     },
     iosStartBadgeText: {
-        color: '#fff',
+        color: '#16A34A',
         fontSize: 11,
-        fontWeight: '700',
+        fontWeight: '600',
     },
     iosActiveText: {
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: '600',
-        color: '#007AFF',
+        color: '#16A34A',
     },
-    inputSection: {
-        backgroundColor: '#fff',
-        paddingTop: 10,
-        paddingBottom: Platform.OS === 'android' ? 20 : 24,
-        paddingHorizontal: 16,
-        borderTopWidth: 1,
-        borderTopColor: '#F0F0F0',
+    floatingInputContainer: {
+        paddingHorizontal: 14,
+        paddingBottom: Platform.OS === 'android' ? 14 : 28,
+        paddingTop: 8,
+        backgroundColor: 'transparent',
     },
-    inputRow: {
+    floatingBar: {
         flexDirection: 'row',
         alignItems: 'center',
+        backgroundColor: '#FFFFFF',
+        borderRadius: 28,
+        borderWidth: 1,
+        borderColor: '#E4E4E7',
+        paddingHorizontal: 14,
+        paddingVertical: 8,
         gap: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 16,
+        elevation: 6,
     },
-    sendIconInside: {
-        padding: 4,
-        marginLeft: 8,
-    },
-    searchBar: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#F3F4F6',
-        borderRadius: 25,
-        paddingHorizontal: 16,
-        height: 48,
-    },
-    textInput: {
-        flex: 1,
-        fontSize: 16,
-        color: '#1A1A1A',
-    },
-    cameraButtonOutside: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        backgroundColor: '#34A853',
+    floatingIconBtn: {
+        width: 32,
+        height: 32,
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: '#34A853',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 6,
-        elevation: 3,
+    },
+    floatingTextInput: {
+        flex: 1,
+        fontSize: 15,
+        color: '#09090B',
+        maxHeight: 100,
+        paddingVertical: 4,
+    },
+    floatingSendBtn: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: '#09090B',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
 });

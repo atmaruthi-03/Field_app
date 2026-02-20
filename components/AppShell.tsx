@@ -1,18 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useRef, useState } from 'react';
 import {
     Animated,
     Dimensions,
-    Image,
     Platform,
     StatusBar as RNStatusBar,
     StyleSheet,
     Text,
     TouchableOpacity,
     TouchableWithoutFeedback,
-    View,
+    View
 } from 'react-native';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -20,7 +19,7 @@ const DRAWER_WIDTH = SCREEN_WIDTH * 0.78;
 const STATUS_BAR_HEIGHT = Platform.OS === 'android' ? (RNStatusBar.currentHeight ?? 24) : 0;
 
 const NAV_ITEMS = [
-    { label: 'Home · Alfred', icon: 'sparkles' as const, route: '/(main)/' },
+    { label: 'Home · Alfred', icon: 'sparkles-outline' as const, route: '/(main)/' },
     { label: 'History & Logs', icon: 'time-outline' as const, route: '/(main)/history' },
     { label: 'Dashboard', icon: 'bar-chart-outline' as const, route: '/(main)/dashboard' },
     { label: 'Notifications', icon: 'notifications-outline' as const, route: null },
@@ -35,10 +34,18 @@ export default function AppShell({ children }: AppShellProps) {
     const drawerAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
     const overlayAnim = useRef(new Animated.Value(0)).current;
     const router = useRouter();
+    const pathname = usePathname();
+
+    const isActive = (route: string | null) => {
+        if (!route) return false;
+        // Match root exactly, others by prefix
+        if (route === '/(main)/') return pathname === '/' || pathname === '/index' || pathname === '';
+        return pathname.includes(route.replace('/(main)', ''));
+    };
 
     const handleLogout = () => {
         closeDrawer();
-        setTimeout(() => router.replace('/'), 200);
+        setTimeout(() => router.replace('/(auth)/login'), 200);
     };
 
     const openDrawer = () => {
@@ -89,18 +96,17 @@ export default function AppShell({ children }: AppShellProps) {
             {/* Global Top Bar */}
             <View style={[styles.header, { paddingTop: STATUS_BAR_HEIGHT }]}>
                 <View style={styles.headerInner}>
-                    {/* Left: Hamburger */}
-                    <TouchableOpacity style={styles.iconBtn} onPress={openDrawer} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-                        <Ionicons name="menu-outline" size={28} color="#1A1A1A" />
-                    </TouchableOpacity>
+                    <View style={styles.headerLeft}>
+                        <TouchableOpacity style={styles.iconBtn} onPress={openDrawer} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+                            <Ionicons name="menu-outline" size={28} color="#1A1A1A" />
+                        </TouchableOpacity>
 
-                    <Image
-                        source={require('../assets/images/Alfred.png')}
-                        style={styles.logo}
-                        resizeMode="contain"
-                    />
+                        <View style={styles.branding}>
+                            <Text style={styles.brandText}>Alfred</Text>
+                        </View>
+                    </View>
 
-                    {/* Spacer right to balance logo center */}
+                    {/* Right side for potential future actions */}
                     <View style={{ width: 44 }} />
                 </View>
             </View>
@@ -120,7 +126,10 @@ export default function AppShell({ children }: AppShellProps) {
             )}
 
             {/* Animated Drawer Panel */}
-            <Animated.View style={[styles.drawer, { transform: [{ translateX: drawerAnim }] }]}>
+            <Animated.View
+                pointerEvents={drawerOpen ? 'auto' : 'none'}
+                style={[styles.drawer, { transform: [{ translateX: drawerAnim }] }]}
+            >
                 {/* Drawer Header */}
                 <View style={[styles.drawerHeader, { paddingTop: STATUS_BAR_HEIGHT + 20 }]}>
                     <View style={styles.avatarCircle}>
@@ -137,19 +146,27 @@ export default function AppShell({ children }: AppShellProps) {
 
                 {/* Nav Items */}
                 <View style={styles.navItems}>
-                    {NAV_ITEMS.map((item) => (
-                        <TouchableOpacity
-                            key={item.label}
-                            style={styles.navItem}
-                            activeOpacity={0.7}
-                            onPress={() => navigate(item.route)}
-                        >
-                            <View style={styles.navIconWrapper}>
-                                <Ionicons name={item.icon} size={22} color="#34A853" />
-                            </View>
-                            <Text style={styles.navLabel}>{item.label}</Text>
-                        </TouchableOpacity>
-                    ))}
+                    <Text style={styles.navSectionLabel}>Navigation</Text>
+                    {NAV_ITEMS.map((item) => {
+                        const active = isActive(item.route);
+                        return (
+                            <TouchableOpacity
+                                key={item.label}
+                                style={[styles.navItem, active && styles.navItemActive]}
+                                activeOpacity={0.7}
+                                onPress={() => navigate(item.route)}
+                            >
+                                <Ionicons
+                                    name={item.icon}
+                                    size={20}
+                                    color={active ? '#09090B' : '#71717A'}
+                                />
+                                <Text style={[styles.navLabel, active && styles.navLabelActive]}>
+                                    {item.label}
+                                </Text>
+                            </TouchableOpacity>
+                        );
+                    })}
                 </View>
 
                 {/* Bottom: Logout Button */}
@@ -168,12 +185,12 @@ export default function AppShell({ children }: AppShellProps) {
 const styles = StyleSheet.create({
     root: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#FAFAFA',
     },
     header: {
-        backgroundColor: '#fff',
+        backgroundColor: '#FFFFFF',
         borderBottomWidth: 1,
-        borderBottomColor: '#F0F0F0',
+        borderBottomColor: '#E4E4E7',
         zIndex: 10,
     },
     headerInner: {
@@ -183,9 +200,23 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: 16,
     },
-    logo: {
-        width: 110,
-        height: 30,
+    headerLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    branding: {
+        backgroundColor: '#F4F4F5',
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 12,
+    },
+    brandText: {
+        fontSize: 13,
+        fontWeight: '700',
+        color: '#52525B',
+        textTransform: 'uppercase',
+        letterSpacing: 1.2,
     },
     iconBtn: {
         width: 44,
@@ -207,72 +238,85 @@ const styles = StyleSheet.create({
         left: 0,
         bottom: 0,
         width: DRAWER_WIDTH,
-        backgroundColor: '#fff',
+        backgroundColor: '#FFFFFF',
         zIndex: 30,
         shadowColor: '#000',
         shadowOffset: { width: 4, height: 0 },
-        shadowOpacity: 0.15,
-        shadowRadius: 16,
+        shadowOpacity: 0.08,
+        shadowRadius: 20,
         elevation: 20,
     },
     drawerHeader: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 24,
-        paddingBottom: 24,
+        paddingBottom: 20,
         gap: 14,
-        backgroundColor: '#F8F9FA',
+        backgroundColor: '#FAFAFA',
+        borderBottomWidth: 1,
+        borderBottomColor: '#E4E4E7',
     },
     avatarCircle: {
-        width: 52,
-        height: 52,
-        borderRadius: 26,
-        backgroundColor: '#34A853',
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: '#09090B',
         justifyContent: 'center',
         alignItems: 'center',
     },
     avatarText: {
         color: '#fff',
-        fontSize: 22,
-        fontWeight: '700',
+        fontSize: 18,
+        fontWeight: '600',
     },
     drawerUserName: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: '#1A1A1A',
+        fontSize: 15,
+        fontWeight: '600',
+        color: '#09090B',
     },
     drawerUserRole: {
-        fontSize: 13,
-        color: '#8E8E93',
+        fontSize: 12,
+        color: '#71717A',
         marginTop: 2,
     },
     divider: {
         height: 1,
-        backgroundColor: '#F0F0F0',
-        marginHorizontal: 0,
+        backgroundColor: '#E4E4E7',
     },
     navItems: {
-        paddingVertical: 12,
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+    },
+    navSectionLabel: {
+        fontSize: 11,
+        fontWeight: '600',
+        color: '#A1A1AA',
+        textTransform: 'uppercase',
+        letterSpacing: 0.8,
+        paddingHorizontal: 8,
+        paddingTop: 8,
+        paddingBottom: 6,
     },
     navItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 24,
-        paddingVertical: 14,
-        gap: 16,
-    },
-    navIconWrapper: {
-        width: 36,
-        height: 36,
+        paddingHorizontal: 12,
+        paddingVertical: 13,
+        gap: 14,
         borderRadius: 10,
-        backgroundColor: '#E6F7ED',
-        justifyContent: 'center',
-        alignItems: 'center',
+        marginBottom: 2,
+    },
+    navItemActive: {
+        backgroundColor: '#F4F4F5',
     },
     navLabel: {
         fontSize: 16,
+        fontWeight: '500',
+        color: '#09090B',
+    },
+    navLabelActive: {
+        color: '#09090B',
         fontWeight: '600',
-        color: '#1A1A1A',
     },
     drawerFooter: {
         position: 'absolute',
@@ -284,20 +328,20 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 10,
-        paddingVertical: 14,
-        paddingHorizontal: 16,
-        backgroundColor: '#FFF0EE',
-        borderRadius: 12,
-        marginBottom: 12,
+        paddingVertical: 12,
+        paddingHorizontal: 14,
+        backgroundColor: '#FEF2F2',
+        borderRadius: 10,
+        marginBottom: 10,
     },
     logoutText: {
-        fontSize: 15,
-        fontWeight: '700',
-        color: '#FF3B30',
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#EF4444',
     },
     versionText: {
-        fontSize: 12,
-        color: '#C7C7CC',
+        fontSize: 11,
+        color: '#A1A1AA',
         textAlign: 'center',
     },
 });
