@@ -13,6 +13,7 @@ import {
     TouchableWithoutFeedback,
     View
 } from 'react-native';
+import { useAuth } from '../context/AuthContext';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const DRAWER_WIDTH = SCREEN_WIDTH * 0.78;
@@ -29,12 +30,21 @@ interface AppShellProps {
     children: React.ReactNode;
 }
 
+/** Formats a snake_case role string into Title Case */
+function formatRole(role: string): string {
+    return role
+        .split('_')
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ');
+}
+
 export default function AppShell({ children }: AppShellProps) {
     const [drawerOpen, setDrawerOpen] = useState(false);
     const drawerAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
     const overlayAnim = useRef(new Animated.Value(0)).current;
     const router = useRouter();
     const pathname = usePathname();
+    const { user, signOut } = useAuth();
 
     const isActive = (route: string | null) => {
         if (!route) return false;
@@ -45,7 +55,10 @@ export default function AppShell({ children }: AppShellProps) {
 
     const handleLogout = () => {
         closeDrawer();
-        setTimeout(() => router.replace('/(auth)/login'), 200);
+        setTimeout(async () => {
+            await signOut();
+            router.replace('/(auth)/login');
+        }, 200);
     };
 
     const openDrawer = () => {
@@ -133,11 +146,15 @@ export default function AppShell({ children }: AppShellProps) {
                 {/* Drawer Header */}
                 <View style={[styles.drawerHeader, { paddingTop: STATUS_BAR_HEIGHT + 20 }]}>
                     <View style={styles.avatarCircle}>
-                        <Text style={styles.avatarText}>M</Text>
+                        <Text style={styles.avatarText}>
+                            {user?.name?.charAt(0)?.toUpperCase() ?? '?'}
+                        </Text>
                     </View>
                     <View>
-                        <Text style={styles.drawerUserName}>Maruthi</Text>
-                        <Text style={styles.drawerUserRole}>Field Engineer</Text>
+                        <Text style={styles.drawerUserName}>{user?.name ?? 'User'}</Text>
+                        <Text style={styles.drawerUserRole}>
+                            {user?.role ? formatRole(user.role) : 'Field App'}
+                        </Text>
                     </View>
                 </View>
 

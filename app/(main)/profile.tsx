@@ -1,9 +1,22 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useAuth } from '../../context/AuthContext';
+
+function formatRole(role: string): string {
+    return role
+        .split('_')
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ');
+}
 
 export default function ProfileScreen() {
     const router = useRouter();
+    const { user, signOut } = useAuth();
+
+    const initials = user?.name
+        ? user.name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)
+        : '?';
 
     const stats = [
         { label: 'Weekly Hours', value: '42.5' },
@@ -18,11 +31,14 @@ export default function ProfileScreen() {
                 {/* Header: User Info */}
                 <View style={styles.profileHeader}>
                     <View style={styles.avatarContainer}>
-                        <Text style={styles.avatarText}>MT</Text>
+                        <Text style={styles.avatarText}>{initials}</Text>
                     </View>
                     <View style={styles.userInfo}>
-                        <Text style={styles.userName}>Maruthi T</Text>
-                        <Text style={styles.userRole}>Site Supervisor · North Block</Text>
+                        <Text style={styles.userName}>{user?.name ?? 'User'}</Text>
+                        <Text style={styles.userRole}>
+                            {user?.role ? formatRole(user.role) : ''}
+                            {user?.org_legal_name ? ` · ${user.org_legal_name}` : ''}
+                        </Text>
                     </View>
                 </View>
 
@@ -73,7 +89,10 @@ export default function ProfileScreen() {
                     {/* Danger Zone */}
                     <TouchableOpacity
                         style={styles.logoutButton}
-                        onPress={() => router.replace('/(auth)/login')}
+                        onPress={async () => {
+                            await signOut();
+                            router.replace('/(auth)/login');
+                        }}
                     >
                         <Text style={styles.logoutText}>Log Out</Text>
                     </TouchableOpacity>

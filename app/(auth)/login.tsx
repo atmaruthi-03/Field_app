@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
+    ActivityIndicator,
     Image,
     KeyboardAvoidingView,
     Platform,
@@ -12,13 +13,35 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { useAuth } from '../../context/AuthContext';
 
 export default function LoginScreen() {
     const router = useRouter();
+    const { signIn } = useAuth();
+
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [rememberMe, setRememberMe] = useState(false);
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const handleLogin = async () => {
+        if (!email.trim() || !password.trim()) {
+            setError('Please enter your email and password.');
+            return;
+        }
+        setError(null);
+        setIsLoading(true);
+        try {
+            await signIn(email.trim(), password);
+            router.replace('/(main)');
+        } catch (err: any) {
+            setError(err?.message ?? 'Login failed. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
         <SafeAreaView style={styles.container}>
@@ -46,9 +69,10 @@ export default function LoginScreen() {
                             placeholder="Work-Email"
                             placeholderTextColor="#999"
                             value={email}
-                            onChangeText={setEmail}
+                            onChangeText={(v) => { setEmail(v); setError(null); }}
                             keyboardType="email-address"
                             autoCapitalize="none"
+                            editable={!isLoading}
                         />
                     </View>
 
@@ -59,8 +83,9 @@ export default function LoginScreen() {
                             placeholder="Password"
                             placeholderTextColor="#999"
                             value={password}
-                            onChangeText={setPassword}
+                            onChangeText={(v) => { setPassword(v); setError(null); }}
                             secureTextEntry={!isPasswordVisible}
+                            editable={!isLoading}
                         />
                         <TouchableOpacity
                             onPress={() => setIsPasswordVisible(!isPasswordVisible)}
@@ -74,6 +99,14 @@ export default function LoginScreen() {
                         </TouchableOpacity>
                     </View>
 
+                    {/* Error Message */}
+                    {error && (
+                        <View style={styles.errorBox}>
+                            <Ionicons name="alert-circle-outline" size={16} color="#DC2626" />
+                            <Text style={styles.errorText}>{error}</Text>
+                        </View>
+                    )}
+
                     <TouchableOpacity
                         style={styles.rememberMeContainer}
                         onPress={() => setRememberMe(!rememberMe)}
@@ -86,11 +119,16 @@ export default function LoginScreen() {
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                        style={styles.loginButton}
+                        style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
                         activeOpacity={0.8}
-                        onPress={() => router.replace('/(main)')}
+                        onPress={handleLogin}
+                        disabled={isLoading}
                     >
-                        <Text style={styles.loginButtonText}>Login</Text>
+                        {isLoading ? (
+                            <ActivityIndicator color="#fff" />
+                        ) : (
+                            <Text style={styles.loginButtonText}>Login</Text>
+                        )}
                     </TouchableOpacity>
                 </View>
             </KeyboardAvoidingView>
@@ -128,13 +166,6 @@ const styles = StyleSheet.create({
         marginBottom: 12,
         textAlign: 'center',
     },
-    subtitle: {
-        fontSize: 14,
-        color: '#666',
-        textAlign: 'center',
-        lineHeight: 20,
-        paddingHorizontal: 10,
-    },
     formContainer: {
         width: '100%',
     },
@@ -160,6 +191,23 @@ const styles = StyleSheet.create({
     },
     eyeIcon: {
         padding: 4,
+    },
+    errorBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        backgroundColor: '#FEF2F2',
+        borderWidth: 1,
+        borderColor: '#FECACA',
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        marginBottom: 16,
+    },
+    errorText: {
+        flex: 1,
+        fontSize: 13,
+        color: '#DC2626',
     },
     rememberMeContainer: {
         flexDirection: 'row',
@@ -193,13 +241,13 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 3,
+    },
+    loginButtonDisabled: {
+        opacity: 0.65,
     },
     loginButtonText: {
         color: '#fff',
