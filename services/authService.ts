@@ -1,4 +1,4 @@
-const BASE_URL = 'https://purelight-afb.pathsetter.ai';
+const BASE_URL = 'https://apepdcl-alfred.pathsetter.ai/api';
 
 export interface AuthTokens {
     access_token: string;
