@@ -1,30 +1,30 @@
 import { Ionicons } from '@expo/vector-icons';
 import { usePathname, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
-    Animated,
     Dimensions,
+    Keyboard,
+    Modal,
     Platform,
     StatusBar as RNStatusBar,
     StyleSheet,
     Text,
     TouchableOpacity,
     TouchableWithoutFeedback,
-    View
+    View,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useChat } from '../context/ChatContext';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const DRAWER_WIDTH = SCREEN_WIDTH * 0.78;
 const STATUS_BAR_HEIGHT = Platform.OS === 'android' ? (RNStatusBar.currentHeight ?? 24) : 0;
 
 const NAV_ITEMS = [
-    { label: 'Home · Alfred', icon: 'sparkles-outline' as const, route: '/(main)/' },
-    { label: 'History & Logs', icon: 'list-outline' as const, route: '/(main)/history' },
+    { label: 'Home · Alfred', icon: 'hardware-chip-outline' as const, route: '/(main)/' },
+    { label: 'History', icon: 'list-outline' as const, route: '/(main)/history' },
     { label: 'Dashboard', icon: 'bar-chart-outline' as const, route: '/(main)/dashboard' },
-    { label: 'Notifications', icon: 'notifications-outline' as const, route: null },
+    { label: 'Alerts', icon: 'notifications-outline' as const, route: '/(main)/notifications' },
 ];
 
 interface AppShellProps {
@@ -40,13 +40,28 @@ function formatRole(role: string): string {
 }
 
 export default function AppShell({ children }: AppShellProps) {
-    const [drawerOpen, setDrawerOpen] = useState(false);
-    const drawerAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
-    const overlayAnim = useRef(new Animated.Value(0)).current;
+    const [keyboardVisible, setKeyboardVisible] = useState(false);
+    const [profileVisible, setProfileVisible] = useState(false);
     const router = useRouter();
     const pathname = usePathname();
     const { user, signOut } = useAuth();
     const { startNewChat } = useChat();
+
+    React.useEffect(() => {
+        const showSubscription = Keyboard.addListener(
+            Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+            () => setKeyboardVisible(true)
+        );
+        const hideSubscription = Keyboard.addListener(
+            Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+            () => setKeyboardVisible(false)
+        );
+
+        return () => {
+            showSubscription.remove();
+            hideSubscription.remove();
+        };
+    }, []);
 
     const isActive = (route: string | null) => {
         if (!route) return false;
@@ -55,65 +70,68 @@ export default function AppShell({ children }: AppShellProps) {
         return pathname.includes(route.replace('/(main)', ''));
     };
 
-    const handleLogout = () => {
-        closeDrawer();
-        setTimeout(async () => {
-            await signOut();
-            router.replace('/(auth)/login');
-        }, 200);
-    };
-
-    const openDrawer = () => {
-        setDrawerOpen(true);
-        Animated.parallel([
-            Animated.spring(drawerAnim, {
-                toValue: 0,
-                useNativeDriver: true,
-                bounciness: 0,
-                speed: 20,
-            }),
-            Animated.timing(overlayAnim, {
-                toValue: 1,
-                duration: 250,
-                useNativeDriver: true,
-            }),
-        ]).start();
-    };
-
-    const closeDrawer = () => {
-        Animated.parallel([
-            Animated.spring(drawerAnim, {
-                toValue: -DRAWER_WIDTH,
-                useNativeDriver: true,
-                bounciness: 0,
-                speed: 20,
-            }),
-            Animated.timing(overlayAnim, {
-                toValue: 0,
-                duration: 200,
-                useNativeDriver: true,
-            }),
-        ]).start(() => setDrawerOpen(false));
-    };
-
     const navigate = (route: string | null) => {
-        closeDrawer();
         if (route) {
-            setTimeout(() => router.push(route as never), 150);
+            router.push(route as never);
         }
     };
+
+    const handleLogout = async () => {
+        setProfileVisible(false);
+        await signOut();
+        router.replace('/(auth)/login');
+    };
+
+    const userInitial = user?.name?.charAt(0)?.toUpperCase() ?? 'U';
 
     return (
         <View style={styles.root}>
             {/* Status bar fix for Android */}
             <StatusBar style="dark" backgroundColor="#fff" />
 
+            {/* Profile Popover Modal */}
+            <Modal
+                visible={profileVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setProfileVisible(false)}
+            >
+                <TouchableWithoutFeedback onPress={() => setProfileVisible(false)}>
+                    <View style={styles.modalOverlay}>
+                        <TouchableWithoutFeedback>
+                            <View style={styles.popoverContainer}>
+                                <View style={styles.popoverHeader}>
+                                    <View style={styles.popoverAvatar}>
+                                        <Ionicons name="person-circle-outline" size={40} color="#FFFFFF" />
+                                    </View>
+                                    <View>
+                                        <Text style={styles.popoverName}>{user?.name ?? 'User'}</Text>
+                                        <Text style={styles.popoverRole}>{user?.role ? formatRole(user.role) : 'Field Engineer'}</Text>
+                                    </View>
+                                </View>
+
+                                <View style={styles.popoverDivider} />
+
+                                <TouchableOpacity style={[styles.popoverItem, styles.logoutItem]} onPress={handleLogout}>
+                                    <Ionicons name="log-out-outline" size={18} color="#EF4444" />
+                                    <Text style={[styles.popoverItemText, styles.logoutText]}>Log Out</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </TouchableWithoutFeedback>
+                    </View>
+                </TouchableWithoutFeedback>
+            </Modal>
+
             {/* Global Top Bar */}
             <View style={[styles.header, { paddingTop: STATUS_BAR_HEIGHT }]}>
                 <View style={styles.headerInner}>
                     <View style={styles.headerLeft}>
-                        <TouchableOpacity style={styles.iconBtn} onPress={openDrawer} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-                            <Ionicons name="menu-outline" size={28} color="#1A1A1A" />
+                        <TouchableOpacity
+                            style={styles.avatarBtn}
+                            onPress={() => setProfileVisible(true)}
+                            activeOpacity={0.7}
+                        >
+                            <Ionicons name="person-circle-outline" size={28} color="#1A1A1A" />
                         </TouchableOpacity>
 
                         <View style={styles.branding}>
@@ -144,81 +162,54 @@ export default function AppShell({ children }: AppShellProps) {
             </View>
 
             {/* Main Content */}
-            <View style={styles.content}>
+            <View style={[
+                styles.content,
+                !keyboardVisible && { paddingBottom: Platform.OS === 'ios' ? 85 : 75 }
+            ]}>
                 {children}
             </View>
 
-            {/* Drawer Overlay */}
-            {drawerOpen && (
-                <TouchableWithoutFeedback onPress={closeDrawer}>
-                    <Animated.View
-                        style={[styles.overlay, { opacity: overlayAnim }]}
-                    />
-                </TouchableWithoutFeedback>
+            {/* Premium Bottom Tab Bar */}
+            {!keyboardVisible && (
+                <View style={styles.bottomTabContainer}>
+                    <View style={styles.bottomTabBar}>
+                        {NAV_ITEMS.map((item) => {
+                            const active = isActive(item.route);
+                            // Convert outline icon to filled icon for active state if available
+                            const iconName = active
+                                ? item.icon.replace('-outline', '') as any
+                                : item.icon;
+
+                            // Shorten labels for bottom tab
+                            const tabLabel = item.label.includes('Home') ? 'Alfred' : item.label;
+
+                            return (
+                                <TouchableOpacity
+                                    key={item.label}
+                                    style={styles.tabItem}
+                                    onPress={() => navigate(item.route)}
+                                    activeOpacity={0.7}
+                                >
+                                    <Ionicons
+                                        name={iconName}
+                                        size={22}
+                                        color={active ? '#34A853' : '#A1A1AA'}
+                                    />
+                                    <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>
+                                        {tabLabel}
+                                    </Text>
+                                    {active && <View style={styles.tabIndicator} />}
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </View>
+                </View>
             )}
-
-            {/* Animated Drawer Panel */}
-            <Animated.View
-                pointerEvents={drawerOpen ? 'auto' : 'none'}
-                style={[styles.drawer, { transform: [{ translateX: drawerAnim }] }]}
-            >
-                {/* Drawer Header */}
-                <View style={[styles.drawerHeader, { paddingTop: STATUS_BAR_HEIGHT + 20 }]}>
-                    <View style={styles.avatarCircle}>
-                        <Text style={styles.avatarText}>
-                            {user?.name?.charAt(0)?.toUpperCase() ?? '?'}
-                        </Text>
-                    </View>
-                    <View>
-                        <Text style={styles.drawerUserName}>{user?.name ?? 'User'}</Text>
-                        <Text style={styles.drawerUserRole}>
-                            {user?.role ? formatRole(user.role) : 'Field App'}
-                        </Text>
-                    </View>
-                </View>
-
-                {/* Divider */}
-                <View style={styles.divider} />
-
-                {/* Nav Items */}
-                <View style={styles.navItems}>
-                    <Text style={styles.navSectionLabel}>Navigation</Text>
-                    {NAV_ITEMS.map((item) => {
-                        const active = isActive(item.route);
-                        return (
-                            <TouchableOpacity
-                                key={item.label}
-                                style={[styles.navItem, active && styles.navItemActive]}
-                                activeOpacity={0.7}
-                                onPress={() => navigate(item.route)}
-                            >
-                                <Ionicons
-                                    name={item.icon}
-                                    size={20}
-                                    color={active ? '#09090B' : '#71717A'}
-                                />
-                                <Text style={[styles.navLabel, active && styles.navLabelActive]}>
-                                    {item.label}
-                                </Text>
-                            </TouchableOpacity>
-                        );
-                    })}
-                </View>
-
-                {/* Bottom: Logout Button */}
-                <View style={styles.drawerFooter}>
-                    <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.8}>
-                        <Ionicons name="log-out-outline" size={20} color="#FF3B30" />
-                        <Text style={styles.logoutText}>Logout</Text>
-                    </TouchableOpacity>
-                    <Text style={styles.versionText}>Alfred Field App · v0.1.0</Text>
-                </View>
-            </Animated.View>
         </View>
     );
 }
 
-const styles = StyleSheet.create({
+const styles: any = StyleSheet.create({
     root: {
         flex: 1,
         backgroundColor: '#FAFAFA',
@@ -243,20 +234,36 @@ const styles = StyleSheet.create({
     headerLeft: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
+        gap: 12,
+    },
+    avatarBtn: {
+        padding: 2,
+    },
+    headerAvatar: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: '#09090B',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    headerAvatarText: {
+        color: '#FFFFFF',
+        fontSize: 12,
+        fontWeight: '700',
     },
     branding: {
-        backgroundColor: '#F4F4F5',
-        paddingHorizontal: 10,
-        paddingVertical: 4,
+        backgroundColor: '#34A853',
+        paddingHorizontal: 12,
+        paddingVertical: 5,
         borderRadius: 12,
     },
     brandText: {
-        fontSize: 13,
-        fontWeight: '700',
-        color: '#52525B',
+        fontSize: 12,
+        fontWeight: '800',
+        color: '#FFFFFF',
         textTransform: 'uppercase',
-        letterSpacing: 1.2,
+        letterSpacing: 1.5,
     },
     iconBtn: {
         width: 44,
@@ -267,121 +274,115 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
     },
-    overlay: {
-        ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(0,0,0,0.45)',
-        zIndex: 20,
-    },
-    drawer: {
+    bottomTabContainer: {
         position: 'absolute',
-        top: 0,
-        left: 0,
         bottom: 0,
-        width: DRAWER_WIDTH,
+        left: 0,
+        right: 0,
         backgroundColor: '#FFFFFF',
-        zIndex: 30,
-        shadowColor: '#000',
-        shadowOffset: { width: 4, height: 0 },
-        shadowOpacity: 0.08,
-        shadowRadius: 20,
-        elevation: 20,
+        borderTopWidth: 1,
+        borderTopColor: '#E4E4E7',
+        paddingBottom: Platform.OS === 'ios' ? 24 : 10,
+        paddingTop: 10,
+        zIndex: 10,
     },
-    drawerHeader: {
+    bottomTabBar: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        alignItems: 'center',
+    },
+    tabItem: {
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        flex: 1,
+    },
+    tabLabel: {
+        fontSize: 10,
+        fontWeight: '500',
+        color: '#A1A1AA',
+        marginTop: 4,
+    },
+    tabLabelActive: {
+        color: '#34A853',
+        fontWeight: '700',
+    },
+    tabIndicator: {
+        width: 4,
+        height: 4,
+        borderRadius: 2,
+        backgroundColor: '#34A853',
+        position: 'absolute',
+        top: -6,
+    },
+    // Popover Styles
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.1)',
+        justifyContent: 'flex-start',
+        paddingTop: STATUS_BAR_HEIGHT + 60, // Position below header
+        paddingLeft: 16,
+    },
+    popoverContainer: {
+        width: 240,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        padding: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.1,
+        shadowRadius: 20,
+        elevation: 10,
+        borderWidth: 1,
+        borderColor: '#E4E4E7',
+    },
+    popoverHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 24,
-        paddingBottom: 20,
-        gap: 14,
-        backgroundColor: '#FAFAFA',
-        borderBottomWidth: 1,
-        borderBottomColor: '#E4E4E7',
+        gap: 12,
+        marginBottom: 12,
     },
-    avatarCircle: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
+    popoverAvatar: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         backgroundColor: '#09090B',
         justifyContent: 'center',
         alignItems: 'center',
     },
-    avatarText: {
-        color: '#fff',
-        fontSize: 18,
-        fontWeight: '600',
+    popoverAvatarText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: '700',
     },
-    drawerUserName: {
+    popoverName: {
         fontSize: 15,
-        fontWeight: '600',
+        fontWeight: '700',
         color: '#09090B',
     },
-    drawerUserRole: {
+    popoverRole: {
         fontSize: 12,
         color: '#71717A',
-        marginTop: 2,
     },
-    divider: {
+    popoverDivider: {
         height: 1,
-        backgroundColor: '#E4E4E7',
-    },
-    navItems: {
-        paddingVertical: 10,
-        paddingHorizontal: 12,
-    },
-    navSectionLabel: {
-        fontSize: 11,
-        fontWeight: '600',
-        color: '#A1A1AA',
-        textTransform: 'uppercase',
-        letterSpacing: 0.8,
-        paddingHorizontal: 8,
-        paddingTop: 8,
-        paddingBottom: 6,
-    },
-    navItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 12,
-        paddingVertical: 13,
-        gap: 14,
-        borderRadius: 10,
-        marginBottom: 2,
-    },
-    navItemActive: {
         backgroundColor: '#F4F4F5',
+        marginVertical: 4,
     },
-    navLabel: {
-        fontSize: 16,
-        fontWeight: '500',
-        color: '#09090B',
-    },
-    navLabelActive: {
-        color: '#09090B',
-        fontWeight: '600',
-    },
-    drawerFooter: {
-        position: 'absolute',
-        bottom: 32,
-        left: 24,
-        right: 24,
-    },
-    logoutButton: {
+    popoverItem: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 10,
-        paddingVertical: 12,
-        paddingHorizontal: 14,
-        backgroundColor: '#FEF2F2',
-        borderRadius: 10,
-        marginBottom: 10,
+        paddingVertical: 10,
+    },
+    popoverItemText: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: '#3F3F46',
+    },
+    logoutItem: {
+        marginTop: 4,
     },
     logoutText: {
-        fontSize: 14,
-        fontWeight: '600',
         color: '#EF4444',
-    },
-    versionText: {
-        fontSize: 11,
-        color: '#A1A1AA',
-        textAlign: 'center',
     },
 });

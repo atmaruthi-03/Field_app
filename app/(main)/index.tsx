@@ -99,7 +99,7 @@ export default function HomeDashboard() {
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={{ flex: 1 }}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 80}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 115 : 90}
             >
                 {isLoadingHistory ? (
                     <View style={styles.center}>

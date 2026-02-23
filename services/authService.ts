@@ -76,7 +76,17 @@ export async function loginApi(email: string, password: string): Promise<AuthTok
     const parsed = JSON.parse(data);
 
     if (status < 200 || status >= 300) {
-        const message = parsed?.detail || `Login failed (${status})`;
+        let message = 'Login failed';
+        if (typeof parsed?.detail === 'string') {
+            message = parsed.detail;
+        } else if (Array.isArray(parsed?.detail)) {
+            // Handle Pydantic validation error arrays
+            message = parsed.detail[0]?.msg || parsed.detail[0] || 'Invalid input';
+        } else if (parsed?.detail?.message) {
+            message = parsed.detail.message;
+        } else if (status === 401) {
+            message = 'Invalid credentials';
+        }
         throw new Error(message);
     }
 

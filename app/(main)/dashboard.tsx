@@ -1,23 +1,78 @@
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
-
-const TIMELINE = [
-    { time: '08:15', label: 'Safety Briefing completed', status: 'done' },
-    { time: '09:30', label: 'Rebar inspection — Zone 3', status: 'done' },
-    { time: '11:00', label: 'RFI submitted: drainage specs', status: 'pending' },
-    { time: '14:00', label: 'Concrete pour — Section A', status: 'upcoming' },
-    { time: '16:30', label: 'EOD photo log submission', status: 'upcoming' },
-];
+import React, { useEffect, useState } from 'react';
+import {
+    ActivityIndicator,
+    RefreshControl,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View
+} from 'react-native';
+import {
+    ActivityEvent,
+    DashboardStats,
+    fetchActivityFeedApi,
+    fetchDashboardStatsApi,
+    fetchWeatherApi,
+    WeatherData
+} from '../../services/dashboardService';
 
 export default function DashboardScreen() {
+    const [stats, setStats] = useState<DashboardStats | null>(null);
+    const [weather, setWeather] = useState<WeatherData | null>(null);
+    const [feed, setFeed] = useState<ActivityEvent[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+
+    const loadData = async () => {
+        setIsLoading(true);
+        try {
+            const [s, w, f] = await Promise.all([
+                fetchDashboardStatsApi(),
+                fetchWeatherApi(),
+                fetchActivityFeedApi()
+            ]);
+            setStats(s);
+            setWeather(w);
+            setFeed(f);
+        } catch (error) {
+            console.error('[Dashboard] Error loading data:', error);
+        } finally {
+            setIsLoading(false);
+            setIsRefreshing(false);
+        }
+    };
+
+    useEffect(() => {
+        loadData();
+    }, []);
+
     const today = new Date().toLocaleDateString('en-GB', {
         weekday: 'short', day: '2-digit', month: 'short',
     });
 
+    if (isLoading && !isRefreshing) {
+        return (
+            <View style={styles.center}>
+                <ActivityIndicator size="large" color="#09090B" />
+                <Text style={styles.loadingText}>Syncing Site Data...</Text>
+            </View>
+        );
+    }
+
     return (
         <SafeAreaView style={styles.container}>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scroll}
+                refreshControl={
+                    <RefreshControl refreshing={isRefreshing} onRefresh={() => {
+                        setIsRefreshing(true);
+                        loadData();
+                    }} />
+                }
+            >
 
                 {/* Header Row */}
                 <View style={styles.pageHeader}>
@@ -31,6 +86,23 @@ export default function DashboardScreen() {
                     </View>
                 </View>
 
+                {/* Weather Quick Widget */}
+                {weather && (
+                    <View style={styles.weatherWidget}>
+                        <View style={styles.weatherInfo}>
+                            <Ionicons name={weather.icon as any} size={28} color="#EAB308" />
+                            <View style={styles.weatherMain}>
+                                <Text style={styles.tempText}>{weather.temp}°C</Text>
+                                <Text style={styles.conditionText}>{weather.condition}</Text>
+                            </View>
+                        </View>
+                        <View style={styles.weatherDivider} />
+                        <Text style={styles.weatherAdvice} numberOfLines={2}>
+                            {weather.advice}
+                        </Text>
+                    </View>
+                )}
+
                 {/* Bento Grid */}
                 <View style={styles.bentoContainer}>
                     {/* Hero Card: Reliability */}
@@ -40,11 +112,11 @@ export default function DashboardScreen() {
                             <Ionicons name="trending-up" size={14} color="#16A34A" />
                         </View>
                         <View style={styles.heroContent}>
-                            <Text style={styles.heroValue}>78.4%</Text>
-                            <Text style={styles.heroTrend}>+2.1% from last week</Text>
+                            <Text style={styles.heroValue}>{stats?.reliability ?? 0}%</Text>
+                            <Text style={styles.heroTrend}>{stats?.reliabilityTrend}</Text>
                         </View>
                         <View style={styles.progressBar}>
-                            <View style={[styles.progressFill, { width: '78.4%' }]} />
+                            <View style={[styles.progressFill, { width: `${stats?.reliability ?? 0}%` } as any]} />
                         </View>
                     </View>
 
@@ -52,13 +124,15 @@ export default function DashboardScreen() {
                     <View style={styles.bentoRow}>
                         <View style={styles.bentoSmallCard}>
                             <Text style={styles.cardLabel}>Tasks Done</Text>
-                            <Text style={styles.bentoValue}>14</Text>
-                            <Text style={styles.bentoSubValue}>of 20 total</Text>
+                            <Text style={styles.bentoValue}>{stats?.tasksDone ?? 0}</Text>
+                            <Text style={styles.bentoSubValue}>of {stats?.tasksTotal ?? 0} total</Text>
                         </View>
                         <View style={styles.bentoSmallCard}>
                             <Text style={styles.cardLabel}>Pending</Text>
-                            <Text style={styles.bentoValue}>05</Text>
-                            <Text style={styles.bentoSubValue}>3 high priority</Text>
+                            <Text style={styles.bentoValue}>
+                                {(stats?.pendingCount ?? 0) < 10 ? `0${stats?.pendingCount ?? 0}` : stats?.pendingCount}
+                            </Text>
+                            <Text style={styles.bentoSubValue}>{stats?.highPriorityPending ?? 0} high priority</Text>
                         </View>
                     </View>
 
@@ -67,17 +141,21 @@ export default function DashboardScreen() {
                         <View style={styles.wideRow}>
                             <View style={styles.wideItem}>
                                 <Text style={styles.cardLabel}>Open RFIs</Text>
-                                <Text style={styles.wideValue}>03</Text>
+                                <Text style={styles.wideValue}>
+                                    {(stats?.openRfis ?? 0) < 10 ? `0${stats?.openRfis ?? 0}` : stats?.openRfis}
+                                </Text>
                             </View>
                             <View style={styles.dividerInner} />
                             <View style={styles.wideItem}>
                                 <Text style={styles.cardLabel}>Safety Pulse</Text>
-                                <Text style={[styles.wideValue, { color: '#16A34A' }]}>Good</Text>
+                                <Text style={[styles.wideValue, { color: stats?.safetyPulse === 'Good' ? '#16A34A' : '#EF4444' }]}>
+                                    {stats?.safetyPulse ?? '...'}
+                                </Text>
                             </View>
                             <View style={styles.dividerInner} />
                             <View style={styles.wideItem}>
                                 <Text style={styles.cardLabel}>Active Staff</Text>
-                                <Text style={styles.wideValue}>42</Text>
+                                <Text style={styles.wideValue}>{stats?.activeStaff ?? 0}</Text>
                             </View>
                         </View>
                     </View>
@@ -86,8 +164,8 @@ export default function DashboardScreen() {
                 {/* Timeline Section */}
                 <Text style={styles.sectionTitle}>Activity Feed</Text>
                 <View style={styles.feedCard}>
-                    {TIMELINE.map((item, i) => (
-                        <View key={item.time} style={[styles.feedRow, i < TIMELINE.length - 1 && styles.feedRowBorder]}>
+                    {feed.map((item, i) => (
+                        <View key={i} style={[styles.feedRow, i < feed.length - 1 && styles.feedRowBorder]}>
                             <Text style={styles.feedTime}>{item.time}</Text>
                             <View style={styles.feedContent}>
                                 <Text style={[styles.feedLabel, item.status === 'done' && styles.feedLabelDone]}>
@@ -108,14 +186,16 @@ export default function DashboardScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+const styles: any = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#FAFAFA' },
+    center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    loadingText: { marginTop: 12, fontSize: 14, color: '#71717A', fontWeight: '500' },
     scroll: { paddingHorizontal: 16, paddingTop: 16 },
     pageHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 24,
+        marginBottom: 20,
         paddingHorizontal: 4,
     },
     pageTitle: { fontSize: 22, fontWeight: '700', color: '#09090B', letterSpacing: -0.5 },
@@ -131,6 +211,43 @@ const styles = StyleSheet.create({
     },
     dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#16A34A' },
     pulseText: { fontSize: 11, fontWeight: '600', color: '#09090B', textTransform: 'uppercase' },
+
+    weatherWidget: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: '#E4E4E7',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+    },
+    weatherInfo: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    weatherMain: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'baseline',
+        gap: 8,
+    },
+    tempText: { fontSize: 24, fontWeight: '800', color: '#09090B' },
+    conditionText: { fontSize: 14, fontWeight: '600', color: '#71717A' },
+    weatherDivider: {
+        height: 1,
+        backgroundColor: '#F4F4F5',
+        marginVertical: 12,
+    },
+    weatherAdvice: {
+        fontSize: 13,
+        color: '#3F3F46',
+        lineHeight: 18,
+        fontStyle: 'italic',
+    },
 
     bentoContainer: {
         gap: 12,
