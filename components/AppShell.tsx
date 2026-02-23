@@ -14,6 +14,7 @@ import {
     View
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
+import { useChat } from '../context/ChatContext';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const DRAWER_WIDTH = SCREEN_WIDTH * 0.78;
@@ -21,7 +22,7 @@ const STATUS_BAR_HEIGHT = Platform.OS === 'android' ? (RNStatusBar.currentHeight
 
 const NAV_ITEMS = [
     { label: 'Home · Alfred', icon: 'sparkles-outline' as const, route: '/(main)/' },
-    { label: 'History & Logs', icon: 'time-outline' as const, route: '/(main)/history' },
+    { label: 'History & Logs', icon: 'list-outline' as const, route: '/(main)/history' },
     { label: 'Dashboard', icon: 'bar-chart-outline' as const, route: '/(main)/dashboard' },
     { label: 'Notifications', icon: 'notifications-outline' as const, route: null },
 ];
@@ -45,6 +46,7 @@ export default function AppShell({ children }: AppShellProps) {
     const router = useRouter();
     const pathname = usePathname();
     const { user, signOut } = useAuth();
+    const { startNewChat } = useChat();
 
     const isActive = (route: string | null) => {
         if (!route) return false;
@@ -119,8 +121,25 @@ export default function AppShell({ children }: AppShellProps) {
                         </View>
                     </View>
 
-                    {/* Right side for potential future actions */}
-                    <View style={{ width: 44 }} />
+                    {/* Right side for chat actions */}
+                    <View style={styles.headerRight}>
+                        <TouchableOpacity
+                            style={styles.iconBtn}
+                            onPress={() => {
+                                startNewChat();
+                                if (pathname !== '/') router.replace('/(main)');
+                            }}
+                        >
+                            <Ionicons name="add-circle-outline" size={26} color="#1A1A1A" />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.iconBtn}
+                            onPress={() => navigate('/(main)/sessions')}
+                        >
+                            <Ionicons name="time-outline" size={26} color="#1A1A1A" />
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </View>
 
@@ -216,6 +235,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 16,
+    },
+    headerRight: {
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     headerLeft: {
         flexDirection: 'row',

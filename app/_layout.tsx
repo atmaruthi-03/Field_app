@@ -1,10 +1,13 @@
 import { Stack } from 'expo-router';
 import { AuthProvider } from '../context/AuthContext';
+import { ChatProvider } from '../context/ChatContext';
 
 export default function RootLayout() {
     return (
         <AuthProvider>
-            <Stack screenOptions={{ headerShown: false }} />
+            <ChatProvider>
+                <Stack screenOptions={{ headerShown: false }} />
+            </ChatProvider>
         </AuthProvider>
     );
 }
