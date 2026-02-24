@@ -1,5 +1,6 @@
-import { Redirect } from 'expo-router';
+import { View } from 'react-native';
 
 export default function Index() {
-    return <Redirect href="/(auth)/login" />;
+    // This is handled by the Auth Guard in app/_layout.tsx
+    return <View style={{ flex: 1, backgroundColor: '#FAFAFA' }} />;
 }

@@ -1,6 +1,9 @@
-import React, { createContext, useCallback, useContext, useState } from 'react';
+import * as SecureStore from 'expo-secure-store';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { ChatSource, fetchSessionMessagesApi, sendChatMessage } from '../services/chatService';
 import { useAuth } from './AuthContext';
+
+const LAST_SESSION_KEY = 'last_chat_session_id';
 
 interface Message {
     role: 'user' | 'assistant';
@@ -30,9 +33,33 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     const [sessionId, setSessionId] = useState<string | null>(null);
     const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>([]);
 
-    // Initialize with a welcome message if empty
-    React.useEffect(() => {
-        if (messages.length === 0 && user && !isLoadingHistory) {
+    // On Startup: Restore last session if exists
+    useEffect(() => {
+        if (!token) {
+            // Cleanup state and storage on logout
+            setMessages([]);
+            setSessionId(null);
+            setSuggestedQuestions([]);
+            SecureStore.deleteItemAsync(LAST_SESSION_KEY).catch(() => { });
+            return;
+        }
+
+        async function restoreSession() {
+            try {
+                const savedId = await SecureStore.getItemAsync(LAST_SESSION_KEY);
+                if (savedId) {
+                    await loadSession(savedId);
+                }
+            } catch (err) {
+                console.error('[ChatContext] Restore session failed:', err);
+            }
+        }
+        restoreSession();
+    }, [token]);
+
+    // Initialize with a welcome message if empty and not loading
+    useEffect(() => {
+        if (messages.length === 0 && user && !isLoadingHistory && !sessionId) {
             setMessages([
                 {
                     role: 'assistant',
@@ -40,10 +67,11 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
                 }
             ]);
         }
-    }, [user, messages.length, isLoadingHistory]);
+    }, [user, messages.length, isLoadingHistory, sessionId]);
 
     const startNewChat = useCallback(() => {
         setSessionId(null);
+        SecureStore.deleteItemAsync(LAST_SESSION_KEY).catch(() => { });
         setSuggestedQuestions([]);
         setMessages([
             {
@@ -57,6 +85,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         setIsLoadingHistory(true);
         setMessages([]); // Clear immediately to prevent flickering
         setSessionId(id);
+        await SecureStore.setItemAsync(LAST_SESSION_KEY, id).catch(() => { });
+
         try {
             const history = await fetchSessionMessagesApi(token || '', id);
 
@@ -69,8 +99,15 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
             setMessages(mappedHistory);
             setSuggestedQuestions([]);
-        } catch (err) {
+        } catch (err: any) {
             console.error('[ChatContext] Error loading session:', err);
+            // If session is not found (404), clear the persistence to prevent repeated errors
+            if (err?.status === 404 || err?.message?.includes('404')) {
+                SecureStore.deleteItemAsync(LAST_SESSION_KEY).catch(() => { });
+                setSessionId(null);
+                // Fallback to fresh state
+                setMessages([]);
+            }
         } finally {
             setIsLoadingHistory(false);
         }
@@ -97,6 +134,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
             setMessages(prev => [...prev, aiMsg]);
             setSessionId(response.session_id);
+            await SecureStore.setItemAsync(LAST_SESSION_KEY, response.session_id).catch(() => { });
             setSuggestedQuestions(response.suggested_questions || []);
 
         } catch (err: any) {

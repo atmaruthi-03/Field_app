@@ -88,7 +88,9 @@ export async function sendChatMessage(
             const parsed = JSON.parse(data);
             errorMessage = parsed.detail || errorMessage;
         } catch (e) { }
-        throw new Error(errorMessage);
+        const error = new Error(errorMessage) as any;
+        error.status = status;
+        throw error;
     }
 
     return JSON.parse(data) as ChatResponse;
@@ -105,7 +107,9 @@ export async function fetchSessionsApi(token: string): Promise<ChatSession[]> {
     const { status, data } = await xhrRequest('GET', url, undefined, token);
 
     if (status < 200 || status >= 300) {
-        throw new Error(`Failed to fetch sessions (${status})`);
+        const error = new Error(`Failed to fetch sessions (${status})`) as any;
+        error.status = status;
+        throw error;
     }
 
     const parsed = JSON.parse(data) as SessionsResponse;
@@ -123,7 +127,9 @@ export async function fetchSessionMessagesApi(token: string, sessionId: string):
     const { status, data } = await xhrRequest('GET', url, undefined, token);
 
     if (status < 200 || status >= 300) {
-        throw new Error(`Failed to fetch messages (${status})`);
+        const error = new Error(`Failed to fetch messages (${status})`) as any;
+        error.status = status;
+        throw error;
     }
 
     const parsed = JSON.parse(data);

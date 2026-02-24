@@ -68,7 +68,6 @@ export default function HomeDashboard() {
     };
 
     const currentDate = new Date().toLocaleDateString('en-GB', {
-        weekday: 'long',
         day: '2-digit',
         month: 'short',
         year: 'numeric',
@@ -76,25 +75,71 @@ export default function HomeDashboard() {
 
     const handleCamera = async () => {
         const { status } = await ImagePicker.requestCameraPermissionsAsync();
-
         if (status !== 'granted') {
             Alert.alert('Permission Denied', 'Alfred needs camera access to capture site updates.');
             return;
         }
-
         const result = await ImagePicker.launchCameraAsync({
             allowsEditing: false,
             quality: 0.8,
         });
-
         if (!result.canceled) {
             setImage(result.assets[0].uri);
             Alert.alert('Photo Captured', 'AI is drafting your update for Zone 3...');
         }
     };
 
+    const renderMessage = (msg: any, idx: number) => {
+        const isUser = msg.role === 'user';
+        const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        return (
+            <View key={idx} style={[styles.messageWrapper, isUser ? styles.userWrapper : styles.aiWrapper]}>
+                <View style={[styles.bubble, isUser ? styles.userBubble : styles.aiBubble]}>
+                    {/* Bubble Tail */}
+                    <View style={[styles.tail, isUser ? styles.userTail : styles.aiTail]} />
+
+                    {!isUser && (
+                        <Text style={styles.aiName}>ALFRED</Text>
+                    )}
+
+                    {msg.role === 'assistant' ? (
+                        <View style={styles.contentContainer}>
+                            <Markdown style={markdownStyles}>
+                                {msg.content}
+                            </Markdown>
+
+                            {msg.sources && msg.sources.length > 0 && (
+                                <View style={styles.sourcesContainer}>
+                                    <View style={styles.sourcesDivider} />
+                                    <Text style={styles.sourcesTitle}>SOURCES</Text>
+                                    {msg.sources.map((s: any, sIdx: number) => (
+                                        <Text key={sIdx} style={styles.sourceItem}>
+                                            • {s.metadata?.file_name || s.text}
+                                        </Text>
+                                    ))}
+                                </View>
+                            )}
+                        </View>
+                    ) : (
+                        <Text style={styles.userText}>{msg.content}</Text>
+                    )}
+
+                    <View style={styles.bubbleFooter}>
+                        <Text style={styles.timestamp}>{timestamp}</Text>
+                        {isUser && (
+                            <Ionicons name="checkmark-done" size={14} color="#53BDEB" style={{ marginLeft: 4 }} />
+                        )}
+                    </View>
+                </View>
+            </View>
+        );
+    };
+
     return (
         <View style={styles.container}>
+            {/* WhatsApp-style Wallpaper Tint */}
+            <View style={styles.wallpaperOverlay} />
 
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -103,7 +148,7 @@ export default function HomeDashboard() {
             >
                 {isLoadingHistory ? (
                     <View style={styles.center}>
-                        <ActivityIndicator size="large" color="#09090B" />
+                        <ActivityIndicator size="large" color="#34A853" />
                         <Text style={styles.resumingText}>Resuming Conversation...</Text>
                     </View>
                 ) : (
@@ -114,59 +159,30 @@ export default function HomeDashboard() {
                             style={styles.chatContainer}
                             contentContainerStyle={styles.chatContent}
                         >
-                            <Text style={styles.dateLabel}>{currentDate}</Text>
-
-                            {messages.map((msg, idx) => (
-                                <View key={idx} style={msg.role === 'user' ? styles.userMessageWrapper : styles.aiMessageWrapper}>
-                                    {msg.role === 'assistant' && (
-                                        <View style={styles.aiRoleContainer}>
-                                            <View style={styles.aiDot} />
-                                            <Text style={styles.aiRoleLabel}>ALFRED</Text>
-                                        </View>
-                                    )}
-
-                                    {msg.role === 'user' && (
-                                        <View style={styles.userRoleContainer}>
-                                            <Text style={styles.userRoleLabel}>YOU</Text>
-                                        </View>
-                                    )}
-
-                                    <View style={msg.role === 'user' ? styles.userBubble : styles.aiResponseCard}>
-                                        {msg.role === 'assistant' ? (
-                                            <View>
-                                                <Markdown style={markdownStyles}>
-                                                    {msg.content}
-                                                </Markdown>
-
-                                                {msg.sources && msg.sources.length > 0 && (
-                                                    <View style={styles.sourcesContainer}>
-                                                        <Text style={styles.sourcesTitle}>Sources:</Text>
-                                                        {msg.sources.map((s: any, sIdx: number) => (
-                                                            <Text key={sIdx} style={styles.sourceItem}>
-                                                                • {s.metadata?.file_name || s.text}
-                                                            </Text>
-                                                        ))}
-                                                    </View>
-                                                )}
-                                            </View>
-                                        ) : (
-                                            <Text style={styles.userText}>{msg.content}</Text>
-                                        )}
-                                    </View>
+                            {/* Date Separator */}
+                            <View style={styles.dateSeparator}>
+                                <View style={styles.datePill}>
+                                    <Text style={styles.dateText}>{currentDate}</Text>
                                 </View>
-                            ))}
+                            </View>
+
+                            {messages.map((msg, idx) => renderMessage(msg, idx))}
 
                             {isThinking && (
-                                <View style={styles.aiMessageWrapper}>
-                                    <View style={styles.aiRoleContainer}>
-                                        <View style={styles.aiDot} />
-                                        <Text style={styles.aiRoleLabel}>ALFRED IS THINKING...</Text>
+                                <View style={styles.aiWrapper}>
+                                    <View style={[styles.bubble, styles.aiBubble]}>
+                                        <View style={[styles.tail, styles.aiTail]} />
+                                        <Text style={styles.aiName}>ALFRED</Text>
+                                        <View style={styles.thinkingContainer}>
+                                            <ActivityIndicator size="small" color="#34A853" />
+                                            <Text style={styles.thinkingText}>Alfred is thinking...</Text>
+                                        </View>
                                     </View>
                                 </View>
                             )}
                         </ScrollView>
 
-                        {/* Suggested Questions Pills */}
+                        {/* Suggested Questions */}
                         {suggestedQuestions.length > 0 && !isThinking && (
                             <View style={styles.suggestedContainer}>
                                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.suggestedScroll}>
@@ -181,27 +197,28 @@ export default function HomeDashboard() {
                     </>
                 )}
 
-                {/* Floating Chat Input — ChatGPT style */}
-                <View style={styles.floatingInputContainer}>
-                    <View style={styles.floatingBar}>
-                        <TouchableOpacity onPress={handleCamera} activeOpacity={0.7} style={styles.floatingIconBtn}>
-                            <Ionicons name="camera-outline" size={20} color="#71717A" />
+                {/* Refined WhatsApp Input Bar */}
+                <View style={styles.inputBarArea}>
+                    <View style={styles.inputBarBackground}>
+                        <TouchableOpacity onPress={handleCamera} style={styles.inputBarIcon}>
+                            <Ionicons name="camera-outline" size={24} color="#71717A" />
                         </TouchableOpacity>
 
                         <TextInput
-                            style={styles.floatingTextInput}
+                            style={[styles.textInput, { maxHeight: 100 }]}
                             placeholder="Message Alfred..."
-                            placeholderTextColor="#A1A1AA"
+                            placeholderTextColor="#94A3B8"
                             value={input}
                             onChangeText={setInput}
-                            returnKeyType="send"
-                            onSubmitEditing={() => handleSend()}
                             multiline
-                            blurOnSubmit={false}
                         />
 
-                        <TouchableOpacity activeOpacity={0.8} style={styles.floatingSendBtn} onPress={() => handleSend()}>
-                            <Ionicons name="arrow-up" size={18} color="#FFFFFF" />
+                        <TouchableOpacity
+                            style={[styles.sendCircle, !input.trim() && styles.sendCircleDisabled]}
+                            onPress={() => handleSend()}
+                            activeOpacity={0.8}
+                        >
+                            <Ionicons name="send" size={18} color="#FFFFFF" style={{ marginLeft: 2 }} />
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -213,245 +230,216 @@ export default function HomeDashboard() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#FAFAFA',
+        backgroundColor: '#E5DDD5', // Classic WhatsApp background
     },
-    userMessageWrapper: {
-        alignItems: 'flex-end',
-        marginBottom: 20,
-    },
-    userRoleContainer: {
-        marginBottom: 4,
-    },
-    userRoleLabel: {
-        fontSize: 10,
-        fontWeight: '700',
-        color: '#A1A1AA',
-        letterSpacing: 0.5,
-    },
-    userBubble: {
-        backgroundColor: '#09090B',
-        paddingHorizontal: 16,
-        paddingVertical: 10,
-        borderRadius: 18,
-        borderTopRightRadius: 4,
-        maxWidth: '85%',
-    },
-    userText: {
-        color: '#FFFFFF',
-        fontSize: 15,
-        lineHeight: 20,
+    wallpaperOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: '#E5DDD5', // Same base color
+        opacity: 1,
     },
     chatContainer: {
         flex: 1,
     },
     chatContent: {
-        padding: 16,
+        paddingHorizontal: 10,
+        paddingTop: 10,
         paddingBottom: 20,
     },
-    center: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
+    messageWrapper: {
+        marginBottom: 4,
+        width: '100%',
+        flexDirection: 'row',
     },
-    resumingText: {
-        marginTop: 12,
-        fontSize: 14,
-        color: '#71717A',
-        fontWeight: '500',
+    userWrapper: {
+        justifyContent: 'flex-end',
+    },
+    aiWrapper: {
+        justifyContent: 'flex-start',
+    },
+    bubble: {
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 8,
+        maxWidth: '85%',
+        minWidth: 80,
+        position: 'relative',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 1,
+        elevation: 1,
+    },
+    userBubble: {
+        backgroundColor: '#DCF8C6',
+        borderTopRightRadius: 0,
+    },
+    aiBubble: {
+        backgroundColor: '#FFFFFF',
+        borderTopLeftRadius: 0,
+    },
+    tail: {
+        position: 'absolute',
+        top: 0,
+        width: 0,
+        height: 0,
+        borderStyle: 'solid',
+        borderLeftWidth: 5,
+        borderRightWidth: 5,
+        borderBottomWidth: 10,
+        borderLeftColor: 'transparent',
+        borderRightColor: 'transparent',
+    },
+    userTail: {
+        right: -5,
+        borderBottomColor: '#DCF8C6',
+        transform: [{ rotate: '90deg' }],
+    },
+    aiTail: {
+        left: -5,
+        borderBottomColor: '#FFFFFF',
+        transform: [{ rotate: '-90deg' }],
+    },
+    userText: {
+        fontSize: 16,
+        color: '#111',
+        lineHeight: 20,
+    },
+    aiName: {
+        fontSize: 11,
+        fontWeight: '700',
+        color: '#34A853',
+        marginBottom: 2,
+        letterSpacing: 0.5,
+    },
+    contentContainer: {
+        marginBottom: 4,
+    },
+    bubbleFooter: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        marginTop: 2,
+    },
+    timestamp: {
+        fontSize: 11,
+        color: '#8E8E93',
+    },
+    dateSeparator: {
+        alignItems: 'center',
+        marginVertical: 14,
+    },
+    datePill: {
+        backgroundColor: '#D1E4FC',
+        paddingHorizontal: 12,
+        paddingVertical: 5,
+        borderRadius: 8,
+    },
+    dateText: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#54656F',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
     },
     suggestedContainer: {
-        paddingBottom: 8,
-        backgroundColor: '#FAFAFA',
+        paddingVertical: 8,
     },
     suggestedScroll: {
-        paddingHorizontal: 16,
+        paddingHorizontal: 10,
         gap: 8,
     },
     suggestedPill: {
         backgroundColor: '#FFFFFF',
-        borderWidth: 1,
-        borderColor: '#E4E4E7',
         paddingHorizontal: 14,
         paddingVertical: 8,
-        borderRadius: 20,
+        borderRadius: 18,
+        borderWidth: 1,
+        borderColor: '#E4E4E7',
     },
     suggestedPillText: {
         fontSize: 13,
         color: '#3F3F46',
         fontWeight: '500',
     },
+    inputBarArea: {
+        padding: 8,
+        backgroundColor: '#E5DDD5', // Match wallpaper color to prevent white space
+    },
+    inputBarBackground: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFFFFF',
+        borderRadius: 25,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        gap: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 4,
+    },
+    inputBarIcon: {
+        padding: 4,
+    },
+    textInput: {
+        flex: 1,
+        fontSize: 16,
+        color: '#111',
+        paddingVertical: 6,
+    },
+    sendCircle: {
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        backgroundColor: '#34A853',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    sendCircleDisabled: {
+        backgroundColor: '#A1A1AA',
+    },
+    thinkingContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        paddingVertical: 4,
+    },
+    thinkingText: {
+        fontSize: 14,
+        color: '#71717A',
+        fontStyle: 'italic',
+    },
     sourcesContainer: {
-        marginTop: 12,
-        paddingTop: 12,
-        borderTopWidth: 1,
-        borderTopColor: '#F0F0F0',
+        marginTop: 8,
+    },
+    sourcesDivider: {
+        height: 1,
+        backgroundColor: '#F0F0F0',
+        marginVertical: 8,
     },
     sourcesTitle: {
-        fontSize: 12,
-        fontWeight: '700',
-        color: '#71717A',
+        fontSize: 10,
+        fontWeight: '800',
+        color: '#94A3B8',
+        letterSpacing: 1,
         marginBottom: 4,
     },
     sourceItem: {
         fontSize: 12,
-        color: '#71717A',
-        marginBottom: 2,
+        color: '#64748B',
+        lineHeight: 16,
     },
-    dateLabel: {
-        fontSize: 12,
-        fontWeight: '700',
-        color: '#BBB',
-        textAlign: 'center',
-        paddingTop: 10,
-        marginBottom: 20,
-        textTransform: 'uppercase',
-        letterSpacing: 1,
-    },
-    aiMessageWrapper: {
-        marginBottom: 24,
-    },
-    aiDot: {
-        width: 10,
-        height: 10,
-        borderRadius: 5,
-        backgroundColor: '#34A853',
-        marginRight: 7,
-    },
-    aiRoleContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 8,
-    },
-    aiAvatarSmall: {
-        width: 24,
-        height: 24,
-        marginRight: 8,
-    },
-    aiRoleLabel: {
-        fontSize: 11,
-        fontWeight: '700',
-        color: '#8E8E93',
-        letterSpacing: 0.5,
-    },
-    aiResponseCard: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: 12,
-        padding: 14,
-        borderWidth: 1,
-        borderColor: '#E4E4E7',
-    },
-    aiGreeting: {
-        fontSize: 17,
-        fontWeight: '600',
-        color: '#09090B',
-        marginBottom: 6,
-    },
-    aiIntroText: {
-        fontSize: 14,
-        color: '#3F3F46',
-        lineHeight: 20,
-        marginBottom: 16,
-    },
-    iosSectionHeader: {
-        marginBottom: 12,
-        paddingTop: 8,
-        borderTopWidth: 1,
-        borderTopColor: '#F0F0F0',
-    },
-    iosSectionTitle: {
-        fontSize: 11,
-        fontWeight: '700',
-        color: '#A1A1AA',
-        textTransform: 'uppercase',
-        letterSpacing: 0.8,
-    },
-    iosInsetGrouped: {
-        backgroundColor: '#F8F9FA',
-        borderRadius: 16,
-        overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: '#EEE',
-    },
-    iosListItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 14,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: '#EEE',
-    },
-    iosStatusIcon: {
-        marginRight: 10,
-    },
-    iosListContent: {
+    center: {
         flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#E5DDD5',
     },
-    iosListTitle: {
+    resumingText: {
+        marginTop: 12,
         fontSize: 14,
+        color: '#71717A',
         fontWeight: '500',
-        color: '#09090B',
-    },
-    iosListSubtitle: {
-        fontSize: 12,
-        color: '#71717A',
-        marginTop: 1,
-    },
-    iosStartBadge: {
-        backgroundColor: '#F0FDF4',
-        paddingHorizontal: 10,
-        paddingVertical: 3,
-        borderRadius: 10,
-    },
-    iosStartBadgeText: {
-        color: '#16A34A',
-        fontSize: 11,
-        fontWeight: '600',
-    },
-    iosActiveText: {
-        fontSize: 12,
-        fontWeight: '600',
-        color: '#16A34A',
-    },
-    floatingInputContainer: {
-        paddingHorizontal: 14,
-        paddingBottom: Platform.OS === 'android' ? 14 : 28,
-        paddingTop: 8,
-        backgroundColor: 'transparent',
-    },
-    floatingBar: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#FFFFFF',
-        borderRadius: 28,
-        borderWidth: 1,
-        borderColor: '#E4E4E7',
-        paddingHorizontal: 14,
-        paddingVertical: 8,
-        gap: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.08,
-        shadowRadius: 16,
-        elevation: 6,
-    },
-    floatingIconBtn: {
-        width: 32,
-        height: 32,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    floatingTextInput: {
-        flex: 1,
-        fontSize: 15,
-        color: '#09090B',
-        maxHeight: 100,
-        paddingVertical: 4,
-    },
-    floatingSendBtn: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: '#09090B',
-        justifyContent: 'center',
-        alignItems: 'center',
     },
 });
