@@ -1,9 +1,11 @@
 import * as SecureStore from 'expo-secure-store';
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { ChatSource, fetchSessionMessagesApi, sendChatMessage } from '../services/chatService';
 import { useAuth } from './AuthContext';
 
-const LAST_SESSION_KEY = 'last_chat_session_id';
+import Config from '../constants/Config';
+
+const LAST_SESSION_KEY = Config.STORAGE_KEYS.LAST_SESSION;
 
 interface Message {
     role: 'user' | 'assistant';
@@ -147,17 +149,19 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         }
     }, [token, sessionId, isThinking]);
 
+    const contextValue = useMemo(() => ({
+        messages,
+        isThinking,
+        isLoadingHistory,
+        sessionId,
+        suggestedQuestions,
+        sendMessage,
+        startNewChat,
+        loadSession
+    }), [messages, isThinking, isLoadingHistory, sessionId, suggestedQuestions, sendMessage, startNewChat, loadSession]);
+
     return (
-        <ChatContext.Provider value={{
-            messages,
-            isThinking,
-            isLoadingHistory,
-            sessionId,
-            suggestedQuestions,
-            sendMessage,
-            startNewChat,
-            loadSession
-        }}>
+        <ChatContext.Provider value={contextValue}>
             {children}
         </ChatContext.Provider>
     );

@@ -1,4 +1,6 @@
-const BASE_URL = 'https://apepdcl-alfred.pathsetter.ai/api';
+import Config from '../constants/Config';
+
+const BASE_URL = Config.API.BASE_URL;
 
 export interface ChatSource {
     id: string;
@@ -53,7 +55,7 @@ function xhrRequest(
         xhr.onerror = () => reject(new Error('Chat network request failed'));
         xhr.ontimeout = () => reject(new Error('Chat request timed out'));
 
-        xhr.timeout = 30000; // Chat can take a while (13s+ in logs)
+        xhr.timeout = Config.API.CHAT_TIMEOUT; // Chat can take a while (13s+ in logs)
         xhr.send(body ?? null);
     });
 }

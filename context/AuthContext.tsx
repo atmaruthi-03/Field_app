@@ -2,7 +2,9 @@ import * as SecureStore from 'expo-secure-store';
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { AuthUser, fetchMeApi, loginApi } from '../services/authService';
 
-const TOKEN_KEY = 'auth_access_token';
+import Config from '../constants/Config';
+
+const TOKEN_KEY = Config.STORAGE_KEYS.TOKEN;
 
 interface AuthContextValue {
     user: AuthUser | null;

@@ -1,18 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { useRouter } from 'expo-router';
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import {
     ActivityIndicator,
     Alert,
+    FlatList,
     KeyboardAvoidingView,
+    ListRenderItemInfo,
     Platform,
-    ScrollView,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
-    View,
+    View
 } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import { useAuth } from '../../context/AuthContext';
@@ -40,7 +40,6 @@ const markdownStyles: any = {
 };
 
 export default function HomeDashboard() {
-    const router = useRouter();
     const { user } = useAuth();
     const {
         messages,
@@ -50,14 +49,22 @@ export default function HomeDashboard() {
         sendMessage
     } = useChat();
 
-    const scrollRef = useRef<ScrollView>(null);
+    const flatListRef = useRef<FlatList>(null);
     const [image, setImage] = React.useState<string | null>(null);
     const [input, setInput] = React.useState('');
 
-    // Auto-scroll to bottom on new messages
+    // Auto-scroll logic for FlatList
+    const scrollToBottom = useCallback(() => {
+        if (messages.length > 0) {
+            setTimeout(() => {
+                flatListRef.current?.scrollToEnd({ animated: true });
+            }, 200);
+        }
+    }, [messages.length]);
+
     useEffect(() => {
-        setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 200);
-    }, [messages, isThinking]);
+        scrollToBottom();
+    }, [messages, isThinking, scrollToBottom]);
 
     const handleSend = async (customText?: string) => {
         const textToSend = customText || input;
@@ -67,11 +74,11 @@ export default function HomeDashboard() {
         await sendMessage(textToSend);
     };
 
-    const currentDate = new Date().toLocaleDateString('en-GB', {
+    const currentDate = useMemo(() => new Date().toLocaleDateString('en-GB', {
         day: '2-digit',
         month: 'short',
         year: 'numeric',
-    });
+    }), []);
 
     const handleCamera = async () => {
         const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -89,31 +96,30 @@ export default function HomeDashboard() {
         }
     };
 
-    const renderMessage = (msg: any, idx: number) => {
-        const isUser = msg.role === 'user';
+    const renderMessageItem = useCallback(({ item, index }: ListRenderItemInfo<any>) => {
+        const isUser = item.role === 'user';
         const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
         return (
-            <View key={idx} style={[styles.messageWrapper, isUser ? styles.userWrapper : styles.aiWrapper]}>
+            <View key={`msg-${index}`} style={[styles.messageWrapper, isUser ? styles.userWrapper : styles.aiWrapper]}>
                 <View style={[styles.bubble, isUser ? styles.userBubble : styles.aiBubble]}>
-                    {/* Bubble Tail */}
                     <View style={[styles.tail, isUser ? styles.userTail : styles.aiTail]} />
 
                     {!isUser && (
                         <Text style={styles.aiName}>ALFRED</Text>
                     )}
 
-                    {msg.role === 'assistant' ? (
+                    {item.role === 'assistant' ? (
                         <View style={styles.contentContainer}>
                             <Markdown style={markdownStyles}>
-                                {msg.content}
+                                {item.content}
                             </Markdown>
 
-                            {msg.sources && msg.sources.length > 0 && (
+                            {item.sources && item.sources.length > 0 && (
                                 <View style={styles.sourcesContainer}>
                                     <View style={styles.sourcesDivider} />
                                     <Text style={styles.sourcesTitle}>SOURCES</Text>
-                                    {msg.sources.map((s: any, sIdx: number) => (
+                                    {item.sources.map((s: any, sIdx: number) => (
                                         <Text key={sIdx} style={styles.sourceItem}>
                                             • {s.metadata?.file_name || s.text}
                                         </Text>
@@ -122,7 +128,7 @@ export default function HomeDashboard() {
                             )}
                         </View>
                     ) : (
-                        <Text style={styles.userText}>{msg.content}</Text>
+                        <Text style={styles.userText}>{item.content}</Text>
                     )}
 
                     <View style={styles.bubbleFooter}>
@@ -134,11 +140,36 @@ export default function HomeDashboard() {
                 </View>
             </View>
         );
-    };
+    }, []);
+
+    const ListHeader = useMemo(() => (
+        <View style={styles.dateSeparator}>
+            <View style={styles.datePill}>
+                <Text style={styles.dateText}>{currentDate}</Text>
+            </View>
+        </View>
+    ), [currentDate]);
+
+    const ListFooter = useMemo(() => (
+        <>
+            {isThinking && (
+                <View style={styles.aiWrapper}>
+                    <View style={[styles.bubble, styles.aiBubble]}>
+                        <View style={[styles.tail, styles.aiTail]} />
+                        <Text style={styles.aiName}>ALFRED</Text>
+                        <View style={styles.thinkingContainer}>
+                            <ActivityIndicator size="small" color="#34A853" />
+                            <Text style={styles.thinkingText}>Alfred is thinking...</Text>
+                        </View>
+                    </View>
+                </View>
+            )}
+            <View style={{ height: 20 }} />
+        </>
+    ), [isThinking]);
 
     return (
         <View style={styles.container}>
-            {/* WhatsApp-style Wallpaper Tint */}
             <View style={styles.wallpaperOverlay} />
 
             <KeyboardAvoidingView
@@ -152,74 +183,65 @@ export default function HomeDashboard() {
                         <Text style={styles.resumingText}>Resuming Conversation...</Text>
                     </View>
                 ) : (
-                    <>
-                        <ScrollView
-                            ref={scrollRef}
-                            showsVerticalScrollIndicator={false}
-                            style={styles.chatContainer}
-                            contentContainerStyle={styles.chatContent}
-                        >
-                            {/* Date Separator */}
-                            <View style={styles.dateSeparator}>
-                                <View style={styles.datePill}>
-                                    <Text style={styles.dateText}>{currentDate}</Text>
-                                </View>
-                            </View>
-
-                            {messages.map((msg, idx) => renderMessage(msg, idx))}
-
-                            {isThinking && (
-                                <View style={styles.aiWrapper}>
-                                    <View style={[styles.bubble, styles.aiBubble]}>
-                                        <View style={[styles.tail, styles.aiTail]} />
-                                        <Text style={styles.aiName}>ALFRED</Text>
-                                        <View style={styles.thinkingContainer}>
-                                            <ActivityIndicator size="small" color="#34A853" />
-                                            <Text style={styles.thinkingText}>Alfred is thinking...</Text>
-                                        </View>
-                                    </View>
-                                </View>
-                            )}
-                        </ScrollView>
-
-                        {/* Suggested Questions */}
-                        {suggestedQuestions.length > 0 && !isThinking && (
-                            <View style={styles.suggestedContainer}>
-                                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.suggestedScroll}>
-                                    {suggestedQuestions.map((q, i) => (
-                                        <TouchableOpacity key={i} style={styles.suggestedPill} onPress={() => handleSend(q)}>
-                                            <Text style={styles.suggestedPillText}>{q}</Text>
-                                        </TouchableOpacity>
-                                    ))}
-                                </ScrollView>
-                            </View>
-                        )}
-                    </>
+                    <FlatList
+                        ref={flatListRef}
+                        data={messages}
+                        keyExtractor={(_, index) => `msg-${index}`}
+                        renderItem={renderMessageItem}
+                        ListHeaderComponent={ListHeader}
+                        ListFooterComponent={ListFooter}
+                        style={styles.chatContainer}
+                        contentContainerStyle={styles.chatContent}
+                        showsVerticalScrollIndicator={false}
+                        initialNumToRender={15}
+                        maxToRenderPerBatch={10}
+                        windowSize={5}
+                        removeClippedSubviews={Platform.OS === 'android'}
+                    />
                 )}
 
-                {/* Refined WhatsApp Input Bar */}
-                <View style={styles.inputBarArea}>
-                    <View style={styles.inputBarBackground}>
-                        <TouchableOpacity onPress={handleCamera} style={styles.inputBarIcon}>
-                            <Ionicons name="camera-outline" size={24} color="#71717A" />
-                        </TouchableOpacity>
+                {/* Suggested Questions & Input */}
+                <View>
+                    {suggestedQuestions.length > 0 && !isThinking && !isLoadingHistory && (
+                        <View style={styles.suggestedContainer}>
+                            <FlatList
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={styles.suggestedScroll}
+                                data={suggestedQuestions}
+                                keyExtractor={(item, index) => `sq-${index}`}
+                                renderItem={({ item }) => (
+                                    <TouchableOpacity style={styles.suggestedPill} onPress={() => handleSend(item)}>
+                                        <Text style={styles.suggestedPillText}>{item}</Text>
+                                    </TouchableOpacity>
+                                )}
+                            />
+                        </View>
+                    )}
 
-                        <TextInput
-                            style={[styles.textInput, { maxHeight: 100 }]}
-                            placeholder="Message Alfred..."
-                            placeholderTextColor="#94A3B8"
-                            value={input}
-                            onChangeText={setInput}
-                            multiline
-                        />
+                    <View style={styles.inputBarArea}>
+                        <View style={styles.inputBarBackground}>
+                            <TouchableOpacity onPress={handleCamera} style={styles.inputBarIcon}>
+                                <Ionicons name="camera-outline" size={24} color="#71717A" />
+                            </TouchableOpacity>
 
-                        <TouchableOpacity
-                            style={[styles.sendCircle, !input.trim() && styles.sendCircleDisabled]}
-                            onPress={() => handleSend()}
-                            activeOpacity={0.8}
-                        >
-                            <Ionicons name="send" size={18} color="#FFFFFF" style={{ marginLeft: 2 }} />
-                        </TouchableOpacity>
+                            <TextInput
+                                style={[styles.textInput, { maxHeight: 100 }]}
+                                placeholder="Message Alfred..."
+                                placeholderTextColor="#94A3B8"
+                                value={input}
+                                onChangeText={setInput}
+                                multiline
+                            />
+
+                            <TouchableOpacity
+                                style={[styles.sendCircle, !input.trim() && styles.sendCircleDisabled]}
+                                onPress={() => handleSend()}
+                                activeOpacity={0.8}
+                            >
+                                <Ionicons name="send" size={18} color="#FFFFFF" style={{ marginLeft: 2 }} />
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
             </KeyboardAvoidingView>
@@ -230,12 +252,11 @@ export default function HomeDashboard() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#E5DDD5', // Classic WhatsApp background
+        backgroundColor: '#E5DDD5',
     },
     wallpaperOverlay: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: '#E5DDD5', // Same base color
-        opacity: 1,
+        backgroundColor: '#E5DDD5',
     },
     chatContainer: {
         flex: 1,
@@ -243,10 +264,9 @@ const styles = StyleSheet.create({
     chatContent: {
         paddingHorizontal: 10,
         paddingTop: 10,
-        paddingBottom: 20,
     },
     messageWrapper: {
-        marginBottom: 4,
+        marginBottom: 8,
         width: '100%',
         flexDirection: 'row',
     },
@@ -343,6 +363,7 @@ const styles = StyleSheet.create({
     },
     suggestedContainer: {
         paddingVertical: 8,
+        backgroundColor: 'rgba(229, 221, 213, 0.9)',
     },
     suggestedScroll: {
         paddingHorizontal: 10,
@@ -363,7 +384,7 @@ const styles = StyleSheet.create({
     },
     inputBarArea: {
         padding: 8,
-        backgroundColor: '#E5DDD5', // Match wallpaper color to prevent white space
+        backgroundColor: '#E5DDD5',
     },
     inputBarBackground: {
         flexDirection: 'row',

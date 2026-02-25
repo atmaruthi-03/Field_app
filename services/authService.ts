@@ -1,4 +1,6 @@
-const BASE_URL = 'https://apepdcl-alfred.pathsetter.ai/api';
+import Config from '../constants/Config';
+
+const BASE_URL = Config.API.BASE_URL;
 
 export interface AuthTokens {
     access_token: string;
@@ -36,7 +38,7 @@ function xhrRequest(
         xhr.onerror = () => reject(new Error('Network request failed'));
         xhr.ontimeout = () => reject(new Error('Request timed out'));
 
-        xhr.timeout = 15000; // 15s timeout
+        xhr.timeout = Config.API.TIMEOUT; // 15s timeout
         xhr.send(body ?? null);
     });
 }

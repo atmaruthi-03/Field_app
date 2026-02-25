@@ -14,6 +14,10 @@ export interface DashboardStats {
     activeStaff: number;
 }
 
+import Config from '../constants/Config';
+
+const BASE_URL = Config.API.BASE_URL;
+
 export interface WeatherData {
     temp: number;
     condition: string;
